@@ -118,6 +118,5 @@ func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssista
 }
 
 func (srv *Service) assemblePrompt(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {
-	TODO
 	return "", nil
 }
