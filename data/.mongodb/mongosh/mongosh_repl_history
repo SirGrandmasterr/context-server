@@ -1,0 +1,5 @@
+authorize
+show databases
+show collections()
+show collections
+ls

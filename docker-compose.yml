@@ -1,27 +1,36 @@
 version: '3.9'
 
 services:
-  redis:
-    restart: unless-stopped
-    container_name: redis
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - /usr/local/redis/redis:/root/redis
-      - /usr/local/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    environment:
-      - REDIS_PASSWORD=llamazoo
-      - REDIS_PORT=6379
-      - REDIS_DATABASES=2
-  
+
   llamawhisperer:
     container_name: llamawhisperer
     restart: unless-stopped
     build: .
+
     ports:
       - "8079:8079"
     depends_on:
-      - redis
+      - mongodb
 
-  
+  mongodb:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data/db
+
+  mongo-express:
+    container_name: mongoexp
+    image: mongo-express
+    ports:
+    - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://user:pass@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      - mongodb

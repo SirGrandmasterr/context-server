@@ -2,9 +2,9 @@ package command
 
 import (
 	"Llamacommunicator/pkg/config"
-	"log"
 
-	"github.com/boltdb/bolt"
+	"github.com/gofiber/storage/mongodb/v2"
+
 	"go.uber.org/zap"
 )
 
@@ -22,13 +22,15 @@ func NewBaseCommand(config *config.Specification, logger *zap.SugaredLogger) Bas
 	}
 }
 
-func (cmd *BaseCommand) NewDatabaseConnection() (*bolt.DB, error) {
+func (cmd *BaseCommand) NewDatabaseConnection() *mongodb.Storage {
 
-	db, err := bolt.Open("my.db", 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//create Database if doesn't exist
-	return db, nil
+	store := mongodb.New(mongodb.Config{
+		ConnectionURI: cmd.config.DBConnLink,
+		Database:      "llamadrama",
+		Collection:    "llama_storage",
+		Reset:         false,
+	})
+
+	return store
 
 }

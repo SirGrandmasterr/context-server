@@ -24,10 +24,7 @@ func NewHttpCommand(baseCommand BaseCommand) *HttpCommand {
 }
 
 func (cmd *HttpCommand) Run(clictx *cli.Context) {
-	db, err := cmd.BaseCommand.NewDatabaseConnection()
-	if err != nil {
-		cmd.BaseCommand.log.Errorln("Error in DB Connection")
-	}
+	db := cmd.BaseCommand.NewDatabaseConnection()
 	defer db.Close()
 	app := fiber.New()
 	app.Use(cors.New())
