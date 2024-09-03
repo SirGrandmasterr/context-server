@@ -4,6 +4,7 @@ import (
 	"Llamacommunicator/api/router"
 	"Llamacommunicator/pkg/auth"
 	"Llamacommunicator/pkg/services/assistant"
+	"context"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -25,12 +26,12 @@ func NewHttpCommand(baseCommand BaseCommand) *HttpCommand {
 
 func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	db := cmd.BaseCommand.NewDatabaseConnection()
-	defer db.Close()
+	defer db.Client().Disconnect(context.Background())
 	app := fiber.New()
 	app.Use(cors.New())
 	app.Use(logger.New())
 
-	authService := auth.NewAuthService(cmd.config)
+	authService := auth.NewAuthService(cmd.Config)
 
 	app.Use(keyauth.New(keyauth.Config{
 		Validator: authService.ValidateAPIKey,
@@ -41,9 +42,9 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	validator := validator.New()
 
 	//Services
-	assistantService := assistant.NewAssistantService(cmd.log, validator)
+	assistantService := assistant.NewAssistantService(cmd.Log, validator)
 
 	router.AssistantRouter(api, assistantService)
 
-	cmd.BaseCommand.log.Fatal(app.Listen(":8079"))
+	cmd.BaseCommand.Log.Fatal(app.Listen(":8079"))
 }

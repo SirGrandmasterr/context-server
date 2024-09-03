@@ -1,0 +1,66 @@
+{
+    "actions": [
+        {
+            "actionname": "LookAtAPainting",
+            "description": "Examine one of the following Paintings: ${painted_art}"
+        },
+        {
+            "actionname": "LookAtArt",
+            "description": "Examine one of the following Paintings: ${painted_art}"
+        },
+        {
+            "actionname": "WalkToPlayer",
+            "description": "Position yourself next to the visitor."
+        },
+        {
+            "actionname": "WalkToObject",
+            "description": "Approach the ${object}"
+        },
+        {
+            "actionname": "TurnOnLights",
+            "description": "Turn on the Lights"
+        },
+        {
+            "actionname": "TurnOffLights",
+            "description": "Turn off the Lights"
+        },
+        {
+            "actionname": "ExchangePainting",
+            "description": "Exchange a painting"
+        },
+        {
+            "actionname": "PatrolGallery",
+            "description": "Walk around the gallery."
+        },
+        {
+            "actionname": "SitDown",
+            "description": "Sit down on the chair."
+        },
+        {
+            "actionname": "GetUp",
+            "description": "Stand up from the chair you are sitting on."
+        },
+        {
+            "actionname": "FollowPlayer",
+            "description": "Follow the visitor"
+        },
+        {
+            "actionname": "LeadToObject",
+            "description": "Show the visitor a specific object"
+        },
+        {
+            "actionname": "QueryAndPlayMusic",
+            "description": "Query the music provider Blankframe for background music."
+        },
+        {
+            "actionname": "StopMusic",
+            "description": "Stop the music"
+        },
+        {
+            "actionname": "ExplainOptions",
+            "description": "Explain to the visitor what actions you can take."
+        }
+    ],
+    "objects": [],
+    "locations": []
+}

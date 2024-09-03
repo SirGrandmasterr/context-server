@@ -1,7 +1,7 @@
 package entities
 
 type RequestAssistantReaction struct {
-	ActionType string `validate:"required"`
+	ActionName string `validate:"required"`
 }
 
 type AllowAssistantAction struct {
@@ -12,4 +12,3 @@ type AssistantAction struct {
 	HasComment bool
 	Comment    string
 }
-
