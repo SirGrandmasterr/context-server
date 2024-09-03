@@ -9,6 +9,7 @@ services:
 
     ports:
       - "8079:8079"
+      - "3000:3000"
     depends_on:
       - mongodb
 

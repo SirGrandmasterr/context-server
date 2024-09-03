@@ -28,6 +28,8 @@ func main() {
 
 	baseCommand := command.NewBaseCommand(conf, log)
 	httpCommand := command.NewHttpCommand(baseCommand)
+	migrateCommand := command.NewMigrateCommand(baseCommand)
+	websocketCommand := command.NewWebsocketCommand(baseCommand)
 	benchmarkCommand := "TODO"
 	log.Infoln(benchmarkCommand + ": gotta implement BenchmarkCommand")
 
@@ -36,6 +38,16 @@ func main() {
 			Name:   "http",
 			Usage:  "Start REST API service",
 			Action: httpCommand.Run,
+		},
+		{
+			Name:   "migrate",
+			Usage:  "Upload init_db.json to mongodb",
+			Action: migrateCommand.Run,
+		},
+		{
+			Name:   "websocket",
+			Usage:  "Start Websocket Server",
+			Action: websocketCommand.Run,
 		},
 	}
 	err = app.Run(os.Args)

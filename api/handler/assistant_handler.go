@@ -10,10 +10,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Message struct {
-	Message string
-}
-
 func RequestReaction(service *assistant.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := context.Background()
@@ -31,6 +27,11 @@ func RequestReaction(service *assistant.Service) fiber.Handler {
 			return c.JSON(presenter.NewAssistantErrorResponse(err))
 		}
 		chosenAction, err := service.AskAssistant(ctx, &requestBody)
+		if err != nil {
+			service.Log.Errorln(err)
+			c.Status(http.StatusInternalServerError)
+			return c.JSON(presenter.NewAssistantErrorResponse(err))
+		}
 
 		c.Status(200)
 		return c.JSON(chosenAction)
