@@ -2,6 +2,7 @@ package entities
 
 type WebSocketMessage struct {
 	MessageType             string //AssistantUpdate, PlayerAction
+	Speech                  string
 	AssistantUpdateType     string //LocationChange, FoV Object change, Music Change, Light change
 	PlayerActionType        string
 	PlayerActionAssets      []string
@@ -13,7 +14,6 @@ type WebSocketMessage struct {
 }
 
 type WebSocketAnswer struct {
-	Speech     bool
-	Speechtext string
-	Action     bool
+	Type string `json:"type"`
+	Text string `json:"text"`
 }

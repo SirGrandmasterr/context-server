@@ -2,12 +2,14 @@ package assistant
 
 import (
 	"Llamacommunicator/pkg/entities"
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -74,7 +76,8 @@ func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssista
 		1. Get up from the chair
 		2. Walk aimlessly through the hall
 		3. Walk towards the visitor
-		Choose your action and if talking is necessary like this: {"action": 0, "speech": false}`,
+		Choose your action and elaborate why you have taken it.`,
+		//Choose your action and if talking is necessary like this: {"action": 0, "speech": false}`,
 	}
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
@@ -115,6 +118,64 @@ func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssista
 	}
 	fmt.Println(string(body))
 	return entities.AssistantAction{}, nil
+}
+
+func (srv *Service) StreamAssistant(txt string) {
+
+	url := "http://localhost:8080/completion"
+	method := "POST"
+
+	payload := strings.NewReader("{" +
+		"" + `"stream": true,` + "" + `"n_predict": 358,` + "" + `"temperature": 0.8,` + "" + `"stop": [` + "" + `"</s>",` + "" + `"<|end|>",` + "" + `"<|eot_id|>",` + "" + `"<|end_of_text|>",` + "" + `"<|im_end|>",` + "" + `"<|EOT|>",` + "" + `"<|END_OF_TURN_TOKEN|>",` + "" + `"<|end_of_turn|>",` + "" + `"<|endoftext|>",` + "" + `"ASSISTANT",` + "" + `"USER"` + "" + `],` + "" + `"repeat_last_n": 0,` + "" + `"repeat_penalty": 1,` + "" + `"penalize_nl": false,` + "" + `"top_k": 0,` + "" + `"top_p": 1,` + "" + `"min_p": 0.05,` + "" + `"tfs_z": 1,` + "" + `"typical_p": 1,` + "" + `"presence_penalty": 0,` + "" + `"frequency_penalty": 0,` + "" + `"mirostat": 0,` + "" + `"mirostat_tau": 5,` + "" + `"mirostat_eta": 0.1,` + "" + `"grammar": "",` + "" + `"n_probs": 0,` + "" + `"min_keep": 0,` + "" + `"image_data": [],` + "" + `"cache_prompt": true,` + "" + `"api_key": "",` + "" + `"prompt": "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: What do you think makes a woman most beautiful? \nASSISTANT"` + "" + `}`)
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, _ := client.Do(req)
+	reader := bufio.NewReader(res.Body)
+	str := ""
+	for {
+		line, _ := reader.ReadBytes('\n')
+		print("read")
+		linestr := string(line)
+		print("string")
+		linelen := len(linestr)
+		print(linelen)
+		if linelen == 1 {
+			print("continue")
+			continue
+		} else if linelen == 0 {
+			break
+		}
+
+		print("slice")
+		linestr = linestr[6 : linelen-1]
+		print("Response")
+		var rsp entities.StreamResponse
+		err = json.Unmarshal(
+			[]byte(linestr),
+			&rsp,
+		)
+		if err != nil {
+			print("MarshalError", err)
+		}
+		str = str + rsp.Content
+		if err != nil {
+			break
+		}
+		print(string(line))
+	}
+	print(str)
+
+	//TODO:
+	// => Connect to AssistantProcess => Offer a channel => search for ., ;, !, ? and then send text.
+
 }
 
 func (srv *Service) assemblePrompt(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {

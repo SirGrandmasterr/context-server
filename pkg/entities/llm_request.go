@@ -25,3 +25,11 @@ type LlmRequest struct {
 	APIKey           string        `json:"api_key"`
 	Prompt           string        `json:"prompt"`
 }
+
+type StreamResponse struct {
+	Content    string `json:"content"`
+	Stop       bool   `json:"stop"`
+	IDSlot     int    `json:"id_slot"`
+	Multimodal bool   `json:"multimodal"`
+	Index      int    `json:"index"`
+}

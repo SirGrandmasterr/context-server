@@ -22,16 +22,16 @@ func NewAssistantProcess(log *zap.SugaredLogger, resChan chan *entities.WebSocke
 }
 
 func (ap *AssistantProcess) Awake() {
-	for i := range 10 {
+	/*for i := range 10 {
 		ap.Log.Infoln("Awake.", i)
 		testmsg := entities.WebSocketAnswer{
-			Speech:     true,
-			Speechtext: "A very particular piece of text",
-			Action:     false,
+			Type: "speech",
+			Text: "A very particular piece of text",
+			//Action:     false,
 		}
 
 		ap.responseChannel <- &testmsg
 		ap.Log.Infoln("Sent a msg.")
-	}
+	}*/
 
 }

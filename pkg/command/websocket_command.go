@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/urfave/cli"
@@ -35,7 +36,7 @@ func (cmd *WebsocketCommand) Run(clictx *cli.Context) {
 		return fiber.ErrUpgradeRequired
 	})
 
-	server := websocketServer.NewWebSocket(cmd.Log)
+	server := websocketServer.NewWebSocket(cmd.Log, validator.New())
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		// c.Locals is added to the *websocket.Conn
 		log.Println(c.Locals("allowed"))  // true
