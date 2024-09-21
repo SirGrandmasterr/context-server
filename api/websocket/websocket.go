@@ -1,9 +1,9 @@
 package websocketServer
 
 import (
+	"Llamacommunicator/pkg/assistant"
 	"Llamacommunicator/pkg/entities"
-	"Llamacommunicator/pkg/services/assistant"
-	"context"
+	"Llamacommunicator/pkg/storage"
 	"encoding/json"
 
 	"github.com/go-playground/validator/v10"
@@ -12,35 +12,35 @@ import (
 )
 
 type WebSocketServer struct {
-	clients          map[*websocket.Conn]bool
-	Log              *zap.SugaredLogger
-	AssistantService assistant.Service
-	val              *validator.Validate
+	clients map[*websocket.Conn]bool
+	Log     *zap.SugaredLogger
+	Val     *validator.Validate
+	Storage storage.StorageReader
 }
 
-func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate) *WebSocketServer {
+func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate, storage storage.StorageReader) *WebSocketServer {
 	return &WebSocketServer{
-		clients:          make(map[*websocket.Conn]bool),
-		Log:              log,
-		AssistantService: *assistant.NewAssistantService(log, val),
+		clients: make(map[*websocket.Conn]bool),
+		Log:     log,
+		Val:     val,
+		Storage: storage,
 	}
 }
 
 func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
-
+	s.Log.Infoln("Handling incoming connection")
 	// Register a new Client
 	s.clients[conn] = true
 	defer func() {
 		delete(s.clients, conn)
 		conn.Close()
 	}()
-	//var assistantChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
-	//var assistant = assistant.NewAssistantProcess(s.Log, assistantChannel)
-	//go assistant.Awake()
-	//go s.LoopForAssistantChannel(conn, assistantChannel)
+	var assistantChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
+	var assistant = assistant.NewAssistantProcess(s.Log, assistantChannel, &s.Storage)
+	go s.LoopForAssistantChannel(conn, assistantChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
-		s.Log.Debugln("Received Message: ")
+		s.Log.Infoln("Received Message: ")
 		if err != nil {
 			s.Log.Errorln("Read Error:", err)
 			break
@@ -51,20 +51,21 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		} else {
 			s.Log.Infoln(message)
 		}
+		assistant.Analyze(message)
 
-		//testmsg := <-assistantChannel
-		s.AssistantService.AskAssistant(context.Background(), &entities.RequestAssistantReaction{
-			ActionName: "TestAction",
-		})
-		testanswer := entities.WebSocketAnswer{
+		//Echo back the speech text
+		/*testanswer := entities.WebSocketAnswer{
 			Type: "speech",
 			Text: message.Speech,
 		}
 		testJson, err := json.Marshal(testanswer)
-		err = conn.WriteMessage(2, testJson)
 		if err != nil {
 			s.Log.Errorln("Writing Json didn't work.")
 		}
+		err = conn.WriteMessage(2, testJson)
+		if err != nil {
+			s.Log.Errorln("Writing message to Conn didn't work.")
+		}*/
 	}
 }
 
@@ -72,10 +73,13 @@ func (s *WebSocketServer) LoopForAssistantChannel(conn *websocket.Conn, ch chan 
 	for {
 		msg := <-ch
 
-		answer := entities.WebSocketAnswer{Type: "speech", Text: msg.Text}
-		err := conn.WriteJSON(answer)
+		sendToCon, err := json.Marshal(msg)
 		if err != nil {
 			s.Log.Errorln("Writing Json didn't work.")
+		}
+		err = conn.WriteMessage(2, sendToCon)
+		if err != nil {
+			s.Log.Errorln("Writing message to Conn didn't work.")
 		}
 	}
 }

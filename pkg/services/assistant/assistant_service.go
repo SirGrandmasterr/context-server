@@ -2,6 +2,7 @@ package assistant
 
 import (
 	"Llamacommunicator/pkg/entities"
+	"Llamacommunicator/pkg/storage"
 	"bufio"
 	"bytes"
 	"context"
@@ -16,14 +17,18 @@ import (
 )
 
 type Service struct {
-	Log *zap.SugaredLogger
-	Val *validator.Validate
+	Log            *zap.SugaredLogger
+	Val            *validator.Validate
+	ServiceChannel chan *entities.WebSocketAnswer
+	Storage        *storage.StorageReader
 }
 
-func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate) *Service {
+func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serChan chan *entities.WebSocketAnswer, storage *storage.StorageReader) *Service {
 	return &Service{
-		Log: log,
-		Val: val,
+		Log:            log,
+		Val:            val,
+		ServiceChannel: serChan,
+		Storage:        storage,
 	}
 
 }
@@ -122,56 +127,130 @@ func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssista
 
 func (srv *Service) StreamAssistant(txt string) {
 
-	url := "http://localhost:8080/completion"
+	url := "http://host.docker.internal:8080/completion"
 	method := "POST"
 
-	payload := strings.NewReader("{" +
-		"" + `"stream": true,` + "" + `"n_predict": 358,` + "" + `"temperature": 0.8,` + "" + `"stop": [` + "" + `"</s>",` + "" + `"<|end|>",` + "" + `"<|eot_id|>",` + "" + `"<|end_of_text|>",` + "" + `"<|im_end|>",` + "" + `"<|EOT|>",` + "" + `"<|END_OF_TURN_TOKEN|>",` + "" + `"<|end_of_turn|>",` + "" + `"<|endoftext|>",` + "" + `"ASSISTANT",` + "" + `"USER"` + "" + `],` + "" + `"repeat_last_n": 0,` + "" + `"repeat_penalty": 1,` + "" + `"penalize_nl": false,` + "" + `"top_k": 0,` + "" + `"top_p": 1,` + "" + `"min_p": 0.05,` + "" + `"tfs_z": 1,` + "" + `"typical_p": 1,` + "" + `"presence_penalty": 0,` + "" + `"frequency_penalty": 0,` + "" + `"mirostat": 0,` + "" + `"mirostat_tau": 5,` + "" + `"mirostat_eta": 0.1,` + "" + `"grammar": "",` + "" + `"n_probs": 0,` + "" + `"min_keep": 0,` + "" + `"image_data": [],` + "" + `"cache_prompt": true,` + "" + `"api_key": "",` + "" + `"prompt": "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: What do you think makes a woman most beautiful? \nASSISTANT"` + "" + `}`)
-
+	payloadObject := entities.LlmRequest{
+		Stream:      true,
+		NPredict:    358,
+		Temperature: 0.8,
+		Stop: []string{
+			"</s>",
+			"<|end|>",
+			"<|eot_id|>",
+			"<|end_of_text|>",
+			"<|im_end|>",
+			"<|EOT|>",
+			"<|END_OF_TURN_TOKEN|>",
+			"<|end_of_turn|>",
+			"<|endoftext|>",
+			"ASSISTANT",
+			"USER"},
+		RepeatLastN:      0,
+		RepeatPenalty:    1,
+		TopK:             0,
+		TopP:             1,
+		MinP:             0.05,
+		TfsZ:             1,
+		TypicalP:         1,
+		PresencePenalty:  0,
+		FrequencyPenalty: 0,
+		Mirostat:         0,
+		MirostatTau:      5,
+		MirostatEta:      0.1,
+		Grammar:          "",
+		NProbs:           0,
+		MinKeep:          0,
+		ImageData:        []interface{}{},
+		CachePrompt:      false,
+		APIKey:           "",
+		Prompt:           "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: " + txt + " \nASSISTANT",
+	}
+	//payload := strings.NewReader("{" +
+	//	"" + `"stream": true,` + "" + `"n_predict": 358,` + "" + `"temperature": 0.8,` + "" + `"stop": [` + "" + `"</s>",` + "" + `"<|end|>",` + "" + `"<|eot_id|>",` + "" + `"<|end_of_text|>",` + "" + `"<|im_end|>",` + "" + `"<|EOT|>",` + "" + `"<|END_OF_TURN_TOKEN|>",` + "" + `"<|end_of_turn|>",` + "" + `"<|endoftext|>",` + "" + `"ASSISTANT",` + "" + `"USER"` + "" + `],` + "" + `"repeat_last_n": 0,` + "" + `"repeat_penalty": 1,` + "" + `"penalize_nl": false,` + "" + `"top_k": 0,` + "" + `"top_p": 1,` + "" + `"min_p": 0.05,` + "" + `"tfs_z": 1,` + "" + `"typical_p": 1,` + "" + `"presence_penalty": 0,` + "" + `"frequency_penalty": 0,` + "" + `"mirostat": 0,` + "" + `"mirostat_tau": 5,` + "" + `"mirostat_eta": 0.1,` + "" + `"grammar": "",` + "" + `"n_probs": 0,` + "" + `"min_keep": 0,` + "" + `"image_data": [],` + "" + `"cache_prompt": true,` + "" + `"api_key": "",` + "" + `"prompt": "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: ` + txt + ` \nASSISTANT"` + "" + `}`)
+	srv.Log.Infoln("Creating Client")
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, payload)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(payloadObject)
+	if err != nil {
+		srv.Log.Infoln("Error marshaling Payload")
+	}
+
+	req, err := http.NewRequest(method, url, &buf)
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	req.Header.Add("Content-Type", "application/json")
-
-	res, _ := client.Do(req)
+	srv.Log.Infoln("Doing Request")
+	res, err := client.Do(req)
+	if err != nil {
+		srv.Log.Errorln("Error during request, ", err)
+	}
 	reader := bufio.NewReader(res.Body)
 	str := ""
 	for {
 		line, _ := reader.ReadBytes('\n')
-		print("read")
+		srv.Log.Debugln("read")
 		linestr := string(line)
-		print("string")
+		srv.Log.Debugln("string")
 		linelen := len(linestr)
-		print(linelen)
+		srv.Log.Debugln(linelen)
 		if linelen == 1 {
-			print("continue")
+			srv.Log.Debugln("continue")
 			continue
 		} else if linelen == 0 {
 			break
 		}
 
-		print("slice")
+		srv.Log.Debugln("slice")
 		linestr = linestr[6 : linelen-1]
-		print("Response")
+		srv.Log.Debugln("Response")
 		var rsp entities.StreamResponse
 		err = json.Unmarshal(
 			[]byte(linestr),
 			&rsp,
 		)
 		if err != nil {
-			print("MarshalError", err)
+			srv.Log.Infoln("MarshalError", err)
 		}
 		str = str + rsp.Content
+		srv.Log.Infoln("current string: ", str)
 		if err != nil {
 			break
 		}
-		print(string(line))
+		switch {
+		case strings.Contains(str, "\n"):
+			srv.Log.Infoln("string contains newline, str is:", str)
+			if strings.TrimSpace(str) != "\n" {
+				srv.Log.Infoln("str with newline sent.")
+				srv.ServiceChannel <- &entities.WebSocketAnswer{
+					Type: "speech",
+					Text: str,
+				}
+				str = ""
+				break
+			} else {
+				srv.Log.Infoln("string contains newline, str is:", str)
+				str = ""
+				srv.Log.Infoln("Resetted string to:", str)
+				break
+			}
+		case strings.Contains(str, ",") || strings.Contains(str, ".") || strings.Contains(str, "!") || strings.Contains(str, "?"):
+			srv.Log.Infoln("string contains , . ! ? => str is:", str)
+			srv.ServiceChannel <- &entities.WebSocketAnswer{
+				Type: "speech",
+				Text: str,
+			}
+			str = ""
+			srv.Log.Infoln("Resetted string to:", str)
+		default:
+			srv.Log.Infoln("Reached Default", str)
+			break
+		}
+
 	}
-	print(str)
 
 	//TODO:
 	// => Connect to AssistantProcess => Offer a channel => search for ., ;, !, ? and then send text.
@@ -179,5 +258,16 @@ func (srv *Service) StreamAssistant(txt string) {
 }
 
 func (srv *Service) assemblePrompt(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {
+	//srv.Storage.ReadActionOptionEntity()
+	//GetBasePrompt
+	//GetLocation
+	//Add UserContext
+	//SearchAvailableActions
+	//Combine
+	return "", nil
+}
+
+func (srv *Service) assemblePromptStream(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {
+	//srv.Storage.ReadActionOptionEntity()
 	return "", nil
 }

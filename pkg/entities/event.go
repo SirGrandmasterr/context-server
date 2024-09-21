@@ -15,9 +15,7 @@ type EnvironmentChangeReceive struct {
 }
 
 type PlayerContext struct {
-	PlayerId        string
-	PlayerLocation  string
-	PlayerLog       string
-	ConversationLog string
-	ActionLog       string
+	PlayerId       string
+	PlayerLocation string
+	History        string
 }

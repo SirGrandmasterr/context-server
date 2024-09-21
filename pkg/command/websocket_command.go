@@ -2,6 +2,7 @@ package command
 
 import (
 	websocketServer "Llamacommunicator/api/websocket"
+	"Llamacommunicator/pkg/storage"
 	"context"
 	"log"
 
@@ -35,8 +36,8 @@ func (cmd *WebsocketCommand) Run(clictx *cli.Context) {
 		}
 		return fiber.ErrUpgradeRequired
 	})
-
-	server := websocketServer.NewWebSocket(cmd.Log, validator.New())
+	storage := storage.NewStorageReader(cmd.Log, cmd.Db)
+	server := websocketServer.NewWebSocket(cmd.Log, validator.New(), *storage)
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		// c.Locals is added to the *websocket.Conn
 		log.Println(c.Locals("allowed"))  // true

@@ -6,3 +6,7 @@ type Player struct {
 	Password    string
 	Application string
 }
+
+type PlayerHistory struct {
+	ID string
+}

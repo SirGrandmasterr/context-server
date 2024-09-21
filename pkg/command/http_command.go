@@ -1,12 +1,9 @@
 package command
 
 import (
-	"Llamacommunicator/api/router"
 	"Llamacommunicator/pkg/auth"
-	"Llamacommunicator/pkg/services/assistant"
 	"context"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -37,14 +34,14 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 		Validator: authService.ValidateAPIKey,
 	}))
 
-	api := app.Group("/api")
+	//api := app.Group("/api")
 
-	validator := validator.New()
+	//validator := validator.New()
 
 	//Services
-	assistantService := assistant.NewAssistantService(cmd.Log, validator)
+	//assistantService := assistant.NewAssistantService(cmd.Log, validator)
 
-	router.AssistantRouter(api, assistantService)
+	//router.AssistantRouter(api, assistantService)
 
 	cmd.BaseCommand.Log.Fatal(app.Listen(":8079"))
 }

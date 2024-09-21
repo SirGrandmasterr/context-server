@@ -6,7 +6,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
@@ -22,14 +21,17 @@ func NewStorageReader(log *zap.SugaredLogger, db *mongo.Database) *StorageReader
 	}
 }
 
-func (strg *StorageReader) ReadActionOptionEntity(action entities.Action, ctx context.Context) error {
+func (strg *StorageReader) ReadActionOptionEntity(name string, ctx context.Context) (entities.Action, error) {
 	actionCollection := strg.Db.Collection("actions")
-	opts := options.Update().SetUpsert(true)
-	filter := bson.D{{Key: `action_name`, Value: action.ActionName}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "action_name", Value: action.ActionName}, {Key: "description", Value: action.Description}}}}
-	_, err := actionCollection.UpdateOne(context.Background(), filter, update, opts)
+	var action entities.Action
+	err := actionCollection.FindOne(ctx, bson.M{"actionname": name}).Decode(&action)
 	if err != nil {
-		strg.Log.Errorln("Error inserting Action Option", err)
+		strg.Log.Panicln("Error in ReadActionOptionEntity", err)
+		return entities.Action{}, err
 	}
-	return nil
+	return action, nil
 }
+
+/*func (strg *StorageReader) ReadPlayerHistory(id string, ctx context.Context) (entities.PlayerContext, error) {
+	re
+}*/
