@@ -35,9 +35,9 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		delete(s.clients, conn)
 		conn.Close()
 	}()
-	var assistantChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
-	var assistant = assistant.NewAssistantProcess(s.Log, assistantChannel, &s.Storage)
-	go s.LoopForAssistantChannel(conn, assistantChannel)
+	var clientResponseChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
+	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage)
+	go s.LoopForClientResponseChannel(conn, clientResponseChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
 		s.Log.Infoln("Received Message: ")
@@ -69,7 +69,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 	}
 }
 
-func (s *WebSocketServer) LoopForAssistantChannel(conn *websocket.Conn, ch chan *entities.WebSocketAnswer) {
+func (s *WebSocketServer) LoopForClientResponseChannel(conn *websocket.Conn, ch chan *entities.WebSocketAnswer) {
 	for {
 		msg := <-ch
 

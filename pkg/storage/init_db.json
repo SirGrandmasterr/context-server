@@ -41,7 +41,7 @@
             "description": "Stand up from the chair you are sitting on."
         },
         {
-            "actionname": "FollowPlayer",
+            "actionname": "followPlayer",
             "description": "Follow the visitor"
         },
         {
@@ -49,11 +49,11 @@
             "description": "Show the visitor a specific object"
         },
         {
-            "actionname": "QueryAndPlayMusic",
+            "actionname": "playMusic",
             "description": "Query the music provider Blankframe for background music."
         },
         {
-            "actionname": "StopMusic",
+            "actionname": "stopMusic",
             "description": "Stop the music"
         },
         {
@@ -61,6 +61,247 @@
             "description": "Explain to the visitor what actions you can take."
         }
     ],
-    "objects": [],
-    "locations": []
+    "objects": [
+        {
+            "objectname": "Crimson_Smoke",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "The image shows an abstract swirl of orange and red smoke against a black background. The smoke is thick and billowing, creating a sense of movement and energy. The contrast between the dark background and the bright colors of the smoke makes the image visually striking.",
+            "actions": ""
+        },
+        {
+            "objectname": "Sugar_Smoke",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "The image is an abstract photograph of pink and yellow ink swirling and mixing in water. The colors are vibrant and the movement of the ink is dynamic, creating a sense of energy and fluidity. The pink ink is closer to the viewer and appears to be in the foreground, while the yellow ink is behind it. The two colors create a striking contrast, and the way they blend together creates a beautiful and ethereal effect.",
+            "actions": ""
+        },
+        {
+            "objectname": "Crystalline_Architecture",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "The image is a black and white photo of a modern staircase that has seemingly been built into a metal ceiling. The staircase is made of flat metal panels that have a texture of small dots. The space between the steps is also made of the same metal. The railings of the stairs are made of a darker metal and disappear into the shadows. The light hits the metal stairs and ceiling in a way that creates a sense of depth and dimension. The image is clean and minimalist, and it creates a sense of modern and industrial architecture.",
+            "actions": ""
+        },
+        {
+            "objectname": "Yellow_Fantasy",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "The image is a fantasy scene with a mysterious, dark feel. The setting features a large, bare tree with branches stretching into the sky. The tree is set against a backdrop of a bright orange, red, and yellow sky with wispy light purple clouds and lightning. Behind the tree is a cliff with a dark, rocky surface. In the background, a majestic castle sits atop a floating island, surrounded by white clouds. The castle is dark and imposing, with a tall tower and many spires, suggesting a sense of power and mystery. Multiple birds are flying in formation across the sky, adding to the scene's ethereal feel. The birds, dark in color, add to the sense of mystery and foreboding. The overall mood of the image is one of mystery and intrigue, with a sense of grandeur and wonder. The floating island and castle suggest a realm of fantasy and dreams, while the dark tree and birds add an element of foreboding. The image evokes a feeling of both beauty and danger, leaving the viewer to wonder what secrets lie within this magical world",
+            "actions": ""
+        },
+        {
+            "objectname": "Lapis_Mosaic",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "This is an abstract piece of art made from colorful glass tiles. There are different shades of blue, turquoise, green, red, and yellow. The pieces are arranged in a spiral pattern, making it seem like a swirling, colorful vortex. The pattern is created by a variety of shapes and sizes of glass tiles. The edges of the pieces are smooth and shiny, like polished glass. The overall effect is vibrant, cheerful, and slightly psychedelic.",
+            "actions": ""
+        },
+        {
+            "objectname": "Religious_Illustration",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Sole_Orchid",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Color_Scheme",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Psychotic_Faces",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Three_Women",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Four_Stones",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Fish_Stones",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Colorless_Petals",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Psychedelic_Tiger",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Oversaturated_Bird",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Abstract_Colors",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Wavy_Blue",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "House_Sea",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Burn_Victim",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Cellular_Degradation",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Infantile_Scriptures",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Blue_Bird",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Boaty_McBoatface",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Geologist_Required",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "True_Art",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Pixelated_Woman",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Pencil_Advert",
+            "objecttype": "painting",
+            "objectlocation": "upper_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Aquarell_City",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Psychedelic_Dog",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Desert_Wanderer",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Rainbow_Guitar",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Abstract_Flowers",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        },
+        {
+            "objectname": "Oversized_Violin",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "",
+            "actions": ""
+        }
+        
+
+    ],
+    "locations": [
+        {"locationName": "lower_gallery", "description": "The lower gallery is the part of the museum where all its sculptures are situated. It can be reached from the upper gallery by descending the stairs."},
+        {"locationName": "upper_gallery", "description": "The upper gallery is the part of the museum where only paintings can be found. It can be reached from the lower gallery by ascending the stairs."}
+    ],
+    "baseprompts": [
+        {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain actions."},  
+        {"promptName":"fellowVisitor", "prompt": "You are a visitor in a museum. You have read a lot about the individual art pieces and like to discuss them with other visitors."}    
+    ]
 }

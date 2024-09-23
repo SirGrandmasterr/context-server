@@ -4,6 +4,7 @@ import (
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/services/assistant"
 	"Llamacommunicator/pkg/storage"
+	"context"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/websocket"
@@ -18,21 +19,38 @@ type AssistantProcess struct {
 	aserv           assistant.Service
 }
 
-func NewAssistantProcess(log *zap.SugaredLogger, resChan chan *entities.WebSocketAnswer, stor *storage.StorageReader) *AssistantProcess {
+func NewAssistantProcess(log *zap.SugaredLogger, clientResponseChan chan *entities.WebSocketAnswer, stor *storage.StorageReader) *AssistantProcess {
 	return &AssistantProcess{
 		clients:         make(map[*websocket.Conn]bool),
 		Log:             log,
-		responseChannel: resChan,
+		responseChannel: clientResponseChan,
 		serviceChannel:  make(chan *entities.WebSocketAnswer),
-		aserv:           *assistant.NewAssistantService(log, validator.New(), resChan, stor),
+		aserv:           *assistant.NewAssistantService(log, validator.New(), clientResponseChan, stor),
 	}
 }
 
 func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 	switch msg.MessageType {
 	case "speech":
-		ap.aserv.StreamAssistant(msg.Speech)
-		break
+		action, _ := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel)
+		//ap.Log.Infoln(action.ActionName)
+
+		testmsg := entities.WebSocketAnswer{
+			Type:       "action",
+			Text:       "followPlayer",
+			ActionName: action.ActionName,
+		}
+		ap.responseChannel <- &testmsg
+
+		/*for {
+			msg := <-ap.serviceChannel
+			if msg.Type == "partial" {
+
+			}
+		}*/
+
+		ap.aserv.StreamAssistant(msg)
+
 	case "update":
 
 	}

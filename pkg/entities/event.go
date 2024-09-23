@@ -13,9 +13,3 @@ type EnvironmentChangeReceive struct {
 	PlayerId       string
 	Description    string
 }
-
-type PlayerContext struct {
-	PlayerId       string
-	PlayerLocation string
-	History        string
-}

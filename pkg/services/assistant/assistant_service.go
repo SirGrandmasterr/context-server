@@ -33,11 +33,112 @@ func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serCha
 
 }
 
-func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssistantReaction) (entities.AssistantAction, error) {
-	url := "http://localhost:8080/completion"
+var url_docker = "http://host.docker.internal:8080/completion"
+var url = "http://host.docker.internal:8080/completion"
+var method = "POST"
+
+func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) (entities.LlmActionResponse, string) {
+	prompt, err := srv.assemblePrompt(ctx, msg, false, 0, "")
+	srv.Log.Infoln("Beginning to detect Action from user Speech and Context")
+	if err != nil {
+		srv.Log.Panicln(err, "PromptAssembly failed")
+	}
+	srv.Log.Infoln(prompt)
+
+	var payload_struct = entities.LlmRequest{
+		Stream:      false,
+		NPredict:    400,
+		Temperature: 1.2,
+		Stop: []string{"</s>",
+			"Attendant:",
+			"Overlord:"},
+		RepeatLastN:      256,
+		RepeatPenalty:    1.18,
+		TopK:             40,
+		TopP:             0.95,
+		MinP:             0.05,
+		TfsZ:             1,
+		TypicalP:         1,
+		PresencePenalty:  0,
+		FrequencyPenalty: 0,
+		Mirostat:         0,
+		MirostatTau:      5,
+		MirostatEta:      0.1,
+		Grammar: ` action ::= ("\"standIdle\"" | "\"patrol\"" | "\"followPlayer\"" | "\"playMusic\"" | "\"stopMusic\"") space
+action-kv ::= "\"action\"" space ":" space action
+root ::= "{" space action-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}`,
+		NProbs:      0,
+		MinKeep:     0,
+		ImageData:   []interface{}{},
+		CachePrompt: false,
+		APIKey:      "",
+		Prompt:      prompt,
+	}
+	payload, err := json.Marshal(payload_struct)
+	if err != nil {
+		srv.Log.Errorln(err)
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}, ""
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+	req.Header.Add("Accept", "text/event-stream")
+	req.Header.Add("Accept-Language", "en-US,en;q=0.5")
+	req.Header.Add("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Add("Referer", "http://localhost:8080/")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Origin", "http://localhost:8080")
+	req.Header.Add("Connection", "keep-alive")
+	req.Header.Add("Sec-Fetch-Dest", "empty")
+	req.Header.Add("Sec-Fetch-Mode", "cors")
+	req.Header.Add("Sec-Fetch-Site", "same-origin")
+
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}, ""
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}, ""
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}, ""
+	}
+	var serverResponse entities.AssistantResponse
+	var detectedAction entities.LlmActionResponse
+	err = json.Unmarshal(body, &serverResponse)
+	srv.Log.Infoln(serverResponse)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	err = json.Unmarshal([]byte(serverResponse.Content), &detectedAction)
+	srv.Log.Infoln(detectedAction)
+	if detectedAction.ActionName == "followPlayer" {
+		srv.Log.Infoln("FollowPlayer detected.")
+		ac, _ := srv.Storage.ReadActionOptionEntity(detectedAction.ActionName, ctx)
+		srv.Log.Infoln("Action name follow player", ac.ActionName, ac.Description)
+	}
+	/*partial := entities.WebSocketAnswer{
+		Type:       "partialAction",
+		Text:       "",
+		ActionName: detectedAction.ActionName,
+	}
+	serviceChannel <- &partial*/
+	return detectedAction, ""
+
+}
+
+func (srv *Service) AskAssistant(ctx context.Context, msg entities.WebSocketMessage) (entities.AssistantAction, error) {
 	method := "POST"
 
-	prompt, err := srv.assemblePrompt(ctx, r)
+	prompt, err := srv.assemblePrompt(ctx, msg, false, 0, "")
 	srv.Log.Infoln(prompt)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
@@ -125,9 +226,8 @@ func (srv *Service) AskAssistant(ctx context.Context, r *entities.RequestAssista
 	return entities.AssistantAction{}, nil
 }
 
-func (srv *Service) StreamAssistant(txt string) {
+func (srv *Service) StreamAssistant(msg entities.WebSocketMessage) {
 
-	url := "http://host.docker.internal:8080/completion"
 	method := "POST"
 
 	payloadObject := entities.LlmRequest{
@@ -164,7 +264,7 @@ func (srv *Service) StreamAssistant(txt string) {
 		ImageData:        []interface{}{},
 		CachePrompt:      false,
 		APIKey:           "",
-		Prompt:           "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: " + txt + " \nASSISTANT",
+		Prompt:           "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: " + msg.Speech + " \nASSISTANT",
 	}
 	//payload := strings.NewReader("{" +
 	//	"" + `"stream": true,` + "" + `"n_predict": 358,` + "" + `"temperature": 0.8,` + "" + `"stop": [` + "" + `"</s>",` + "" + `"<|end|>",` + "" + `"<|eot_id|>",` + "" + `"<|end_of_text|>",` + "" + `"<|im_end|>",` + "" + `"<|EOT|>",` + "" + `"<|END_OF_TURN_TOKEN|>",` + "" + `"<|end_of_turn|>",` + "" + `"<|endoftext|>",` + "" + `"ASSISTANT",` + "" + `"USER"` + "" + `],` + "" + `"repeat_last_n": 0,` + "" + `"repeat_penalty": 1,` + "" + `"penalize_nl": false,` + "" + `"top_k": 0,` + "" + `"top_p": 1,` + "" + `"min_p": 0.05,` + "" + `"tfs_z": 1,` + "" + `"typical_p": 1,` + "" + `"presence_penalty": 0,` + "" + `"frequency_penalty": 0,` + "" + `"mirostat": 0,` + "" + `"mirostat_tau": 5,` + "" + `"mirostat_eta": 0.1,` + "" + `"grammar": "",` + "" + `"n_probs": 0,` + "" + `"min_keep": 0,` + "" + `"image_data": [],` + "" + `"cache_prompt": true,` + "" + `"api_key": "",` + "" + `"prompt": "You work in a museum and it is your job to give lengthy answers to visitors who ask you questions. Currently, you stand idle as a visitor speaks to you:\n\n\n\nUSER: ` + txt + ` \nASSISTANT"` + "" + `}`)
@@ -192,11 +292,8 @@ func (srv *Service) StreamAssistant(txt string) {
 	str := ""
 	for {
 		line, _ := reader.ReadBytes('\n')
-		srv.Log.Debugln("read")
 		linestr := string(line)
-		srv.Log.Debugln("string")
 		linelen := len(linestr)
-		srv.Log.Debugln(linelen)
 		if linelen == 1 {
 			srv.Log.Debugln("continue")
 			continue
@@ -204,9 +301,7 @@ func (srv *Service) StreamAssistant(txt string) {
 			break
 		}
 
-		srv.Log.Debugln("slice")
 		linestr = linestr[6 : linelen-1]
-		srv.Log.Debugln("Response")
 		var rsp entities.StreamResponse
 		err = json.Unmarshal(
 			[]byte(linestr),
@@ -216,7 +311,6 @@ func (srv *Service) StreamAssistant(txt string) {
 			srv.Log.Infoln("MarshalError", err)
 		}
 		str = str + rsp.Content
-		srv.Log.Infoln("current string: ", str)
 		if err != nil {
 			break
 		}
@@ -240,34 +334,68 @@ func (srv *Service) StreamAssistant(txt string) {
 		case strings.Contains(str, ",") || strings.Contains(str, ".") || strings.Contains(str, "!") || strings.Contains(str, "?"):
 			srv.Log.Infoln("string contains , . ! ? => str is:", str)
 			srv.ServiceChannel <- &entities.WebSocketAnswer{
-				Type: "speech",
-				Text: str,
+				Type:       "speech",
+				Text:       str,
+				ActionName: "speak",
 			}
 			str = ""
 			srv.Log.Infoln("Resetted string to:", str)
 		default:
 			srv.Log.Infoln("Reached Default", str)
-			break
 		}
 
 	}
 
-	//TODO:
-	// => Connect to AssistantProcess => Offer a channel => search for ., ;, !, ? and then send text.
+	srv.ServiceChannel <- &entities.WebSocketAnswer{
+		Type:       "speech",
+		Text:       str,
+		ActionName: "stopSpeak",
+	}
 
 }
 
-func (srv *Service) assemblePrompt(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {
+func (srv *Service) assemblePrompt(ctx context.Context, msg entities.WebSocketMessage, partialAction bool, partialIndex int, actionName string) (string, error) {
+	var avActions string = strings.Join(msg.AssistantContext.AvailableActions, ", ")
+	srv.Log.Infoln("Here are the available actions: ", avActions)
+	srv.Log.Infoln(msg.AssistantContext)
+	prompt := ""
+	prompt += "You work in a museum as an assistant."                                                                                       //Find Setting
+	prompt += "You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain actions." //Job Description
+	prompt += "You are positioned on the lower level of the museum where all sculptures are located."                                       //Location
+	prompt += "Currently, you stand idle as a visitor speaks to you."                                                                       //Get state from msg
+	prompt += "Detect whether or not the visitor wants you to take one of the following actions: "
+	prompt += avActions
+	prompt += "\n\n\n\nUSER: " + msg.Speech
+	prompt += "\nASSISTANT:"
+
 	//srv.Storage.ReadActionOptionEntity()
 	//GetBasePrompt
 	//GetLocation
 	//Add UserContext
 	//SearchAvailableActions
 	//Combine
-	return "", nil
+	srv.Log.Infoln("Generated Prompt: ", prompt)
+	return prompt, nil
 }
 
-func (srv *Service) assemblePromptStream(ctx context.Context, r *entities.RequestAssistantReaction) (string, error) {
-	//srv.Storage.ReadActionOptionEntity()
-	return "", nil
+// This function transfers the available actions into an Enum, to make sure the lil' stupid Llama makes no spelling mistakes. :)
+func (srv *Service) assembleActionGrammarEnum(ctx context.Context, msg entities.WebSocketMessage) string {
+	len := len(msg.AssistantContext.AvailableActions)
+	result := "("
+	for i, st := range msg.AssistantContext.AvailableActions {
+		result += `"\"`
+		result += st
+		result += `\""`
+		if i != len-1 {
+			result += ` | `
+		}
+	}
+	result += ")"
+
+	grammar := `action ::= ` + result + ` space
+action-kv ::= "\"action\"" space ":" space action
+root ::= "{" space action-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}`
+	print("grammar: ", grammar)
+	return grammar
 }

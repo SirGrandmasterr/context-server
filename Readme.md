@@ -1,1 +1,1 @@
-Helo this is dog
+Asset descriptions made with https://describepicture.org/

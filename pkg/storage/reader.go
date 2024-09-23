@@ -24,7 +24,7 @@ func NewStorageReader(log *zap.SugaredLogger, db *mongo.Database) *StorageReader
 func (strg *StorageReader) ReadActionOptionEntity(name string, ctx context.Context) (entities.Action, error) {
 	actionCollection := strg.Db.Collection("actions")
 	var action entities.Action
-	err := actionCollection.FindOne(ctx, bson.M{"actionname": name}).Decode(&action)
+	err := actionCollection.FindOne(ctx, bson.M{"action_name": name}).Decode(&action)
 	if err != nil {
 		strg.Log.Panicln("Error in ReadActionOptionEntity", err)
 		return entities.Action{}, err
