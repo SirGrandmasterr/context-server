@@ -1,65 +1,115 @@
 {
     "actions": [
         {
-            "actionname": "LookAtAPainting",
-            "description": "Examine one of the following Paintings: ${painted_art}"
+            "actionname": "walkToVisitor",
+            "description": "Position yourself next to the visitor.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionquery" }
+            ]
         },
         {
-            "actionname": "LookAtArt",
-            "description": "Examine one of the following Paintings: ${painted_art}"
+            "actionname": "walkToObject",
+            "description": "Position yourself next to the object in question.",
+            "stages": 2,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Position yourself next to the object in question.","type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Analyze the words of the visitor to determine which of these objects you should approach: ","type": "actionquery"}
+            ]
         },
         {
-            "actionname": "WalkToPlayer",
-            "description": "Position yourself next to the visitor."
+            "actionname": "patrol",
+            "description": "Walk around the gallery.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionquery" }
+            ]
         },
         {
-            "actionname": "WalkToObject",
-            "description": "Approach the ${object}"
+            "actionname": "followVisitor",
+            "description": "Follow the visitor",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Follow the visitor.", "type": "actionselection"}
+            ]
+            
         },
         {
-            "actionname": "TurnOnLights",
-            "description": "Turn on the Lights"
+            "actionname": "stopFollowingVisitor",
+            "description": "Stop Following the Visitor.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Stop following the Visitor.", "type": "actionselection"}
+            ]
+            
         },
         {
-            "actionname": "TurnOffLights",
-            "description": "Turn off the Lights"
-        },
-        {
-            "actionname": "ExchangePainting",
-            "description": "Exchange a painting"
-        },
-        {
-            "actionname": "PatrolGallery",
-            "description": "Walk around the gallery."
-        },
-        {
-            "actionname": "SitDown",
-            "description": "Sit down on the chair."
-        },
-        {
-            "actionname": "GetUp",
-            "description": "Stand up from the chair you are sitting on."
-        },
-        {
-            "actionname": "followPlayer",
-            "description": "Follow the visitor"
-        },
-        {
-            "actionname": "LeadToObject",
-            "description": "Show the visitor a specific object"
+            "actionname": "leadToLocation",
+            "description": "This action makes you show the visitor the way to a different location.",
+            "stages": 4,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "This action makes you show the visitor the way to a different location.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Inform the visitor what location you'll be leading him to.", "type": "speech"},
+                {"stage": 3, "stage_instructions": "Analyze the words of the visitor to determine which of these locations you should approach: ", "type": "actionquery"},
+                {"stage": 4, "stage_instructions": "Inform the visitor that you have arrived at the location.", "type": "speech"}
+            ]
         },
         {
             "actionname": "playMusic",
-            "description": "Query the music provider Blankframe for background music."
+            "description": "Query the music provider Blankframe for background music and let the visitor listen to it.",
+            "stages": 4,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Query the music provider Blankframe for background music and let the visitor listen to it.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Extract from the input the adjectives or genres that describe requested music. Here is an example: \n INPUT: I'd like to listen to something energetic. \n ASSISTANT: {\"result\": \"energetic\"}", "type": "playerSpeechAnalysis",  "material": []},
+                {"stage": 3, "stage_instructions": "Sadly no music was found, inform the visitor that they might need to request different music.", "type": "speech", "unityResponse": true}
+            ]
         },
         {
             "actionname": "stopMusic",
-            "description": "Stop the music"
+            "description": "Stop the music if it is currently playing.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Query the music provider Blankframe for background music and let the visitor listen to it.", "type": "actionselection",  "material": []}
+            ]
         },
         {
-            "actionname": "ExplainOptions",
-            "description": "Explain to the visitor what actions you can take."
+            "actionname": "explainWhatYouCanDo",
+            "description": "Choose this action if the visitor wants to know which actions you can choose from, or what you're capable of doing.",
+            "stages": 2,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Explain to the visitor what actions are currently available.", "type": "actionselection", "material": []},
+                {"stage": 2, "stage_instructions": "Explain to the visitor what actions are currently available.", "type": "speech", "material": ["options"]}
+            ]
+
+
+        },
+        {
+            "actionname": "provideArtInformation",
+            "description": "Give the visitor information about a piece of art that the two of you are looking at.",
+            "stages": 4,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Give the visitor information about a piece of art that the two of you are looking at.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know about the current piece of art the two of you are looking at.", "type": "speech", "material": ["focus"]}
+            ]
+        },
+        {
+            "actionname": "provideGeneralInformation",
+            "description": "Provide the visitor with information about a piece of art or the Gallery.",
+            "stages": 4,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Choose this action if the visitor requested general information about the museum/gallery or its exhibition pieces.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know out of the provided contextual information", "type": "speech", "material": ["worldContext", "objects"]}
+            ]
+        },
+        {
+            "actionname": "continueConversation",
+            "description": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.",
+            "stages": 1,
+            "instructions":[
+                {"stage": 1, "stage_instructions": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.", "type": "speech"}
+            ]
         }
+
     ],
     "objects": [
         {
@@ -231,7 +281,7 @@
             "actions": ""
         },
         {
-            "objectname": "True_Art",
+            "objectname": "True_art",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
             "description": "",
@@ -302,6 +352,14 @@
     ],
     "baseprompts": [
         {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain actions."},  
-        {"promptName":"fellowVisitor", "prompt": "You are a visitor in a museum. You have read a lot about the individual art pieces and like to discuss them with other visitors."}    
+        {"promptName":"analysisMachine", "prompt": "This is the thought process of a machine that analyzes natural language. It receives a task and an input, and analyzes the input based on the task provided. It offers the result in a json, like so: {\"result\":\"result of the task\""}    
+    ],
+    "players": [
+        {
+            "_id": "66f41e0c7b864b182439c7f6",
+            "username": "Sir Grandmasterr",
+            "password": "test",
+            "history": ""
+        }
     ]
 }

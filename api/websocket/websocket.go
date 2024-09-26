@@ -12,18 +12,20 @@ import (
 )
 
 type WebSocketServer struct {
-	clients map[*websocket.Conn]bool
-	Log     *zap.SugaredLogger
-	Val     *validator.Validate
-	Storage storage.StorageReader
+	clients   map[*websocket.Conn]bool
+	Log       *zap.SugaredLogger
+	Val       *validator.Validate
+	Storage   storage.StorageReader
+	Storagewr storage.StorageWriter
 }
 
-func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate, storage storage.StorageReader) *WebSocketServer {
+func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate, storage storage.StorageReader, storagewr storage.StorageWriter) *WebSocketServer {
 	return &WebSocketServer{
-		clients: make(map[*websocket.Conn]bool),
-		Log:     log,
-		Val:     val,
-		Storage: storage,
+		clients:   make(map[*websocket.Conn]bool),
+		Log:       log,
+		Val:       val,
+		Storage:   storage,
+		Storagewr: storagewr,
 	}
 }
 
@@ -36,7 +38,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		conn.Close()
 	}()
 	var clientResponseChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
-	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage)
+	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage, &s.Storagewr)
 	go s.LoopForClientResponseChannel(conn, clientResponseChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -52,20 +54,6 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 			s.Log.Infoln(message)
 		}
 		assistant.Analyze(message)
-
-		//Echo back the speech text
-		/*testanswer := entities.WebSocketAnswer{
-			Type: "speech",
-			Text: message.Speech,
-		}
-		testJson, err := json.Marshal(testanswer)
-		if err != nil {
-			s.Log.Errorln("Writing Json didn't work.")
-		}
-		err = conn.WriteMessage(2, testJson)
-		if err != nil {
-			s.Log.Errorln("Writing message to Conn didn't work.")
-		}*/
 	}
 }
 

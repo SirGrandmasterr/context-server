@@ -49,7 +49,7 @@ func (cmd *MigrateCommand) Run(cliCtx *cli.Context) error {
 	cmd.Log.Infoln("Uploading ActionOption Entities")
 	cmd.Log.Infoln(initJson.Actions)
 	for _, action := range initJson.Actions {
-		err = cmd.storageWriter.SaveActionOptionEntity(action, context.Background())
+		err = cmd.storageWriter.SaveActionOptionEntity2(action, context.Background())
 		if err != nil {
 			cmd.Log.Errorln(err)
 		}
@@ -71,6 +71,13 @@ func (cmd *MigrateCommand) Run(cliCtx *cli.Context) error {
 	cmd.Log.Infoln("Uploading Locations")
 	for _, obj := range initJson.Locations {
 		err = cmd.storageWriter.SaveLocations(obj, context.Background())
+		if err != nil {
+			cmd.Log.Errorln(err)
+		}
+	}
+	cmd.Log.Infoln("Creating Player")
+	for _, obj := range initJson.Players {
+		err = cmd.storageWriter.SavePlayers(obj, context.Background())
 		if err != nil {
 			cmd.Log.Errorln(err)
 		}

@@ -5,4 +5,5 @@ type InitJson struct {
 	Objects     []RelevantObject `json:"objects"`
 	Locations   []Location       `json:"locations"`
 	BasePrompts []BasePrompt     `json:"baseprompts"`
+	Players     []Player         `json:"players"`
 }

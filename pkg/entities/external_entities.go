@@ -1,17 +1,18 @@
 package entities
 
 type AssistantContext struct {
-	Location         string   `json:"location"`
-	PlayerVisible    bool     `json:"playerVisible"`
-	PlayerAudible    bool     `json:"playerAudible"`
-	AssetsInView     []string `json:"assetsInView"`
-	AvailableActions []string `json:"availableActions"`
-	WalkingState     string   `json:"walkingState"` //
-	FocusedAsset     string   `json:"focusedAsset"` // If following Player and looking together at artwork
+	Location           string   `json:"location"`
+	PlayerVisible      bool     `json:"playerVisible"`
+	PlayerAudible      bool     `json:"playerAudible"`
+	AssetsInView       []string `json:"assetsInView"`
+	AvailableActions   []string `json:"availableActions"`
+	WalkingState       string   `json:"walkingState"` //
+	FocusedAsset       string   `json:"focusedAsset"` // If following Player and looking together at artwork
+	SelectedBasePrompt string   `json:"selectedBasePrompt"`
 }
 
 type PlayerContext struct {
-	PlayerId       string   `json:"playerId"`
+	PlayerUsername string   `json:"playerUsername"`
 	Location       string   `json:"location"`
 	InConversation bool     `json:"inConversation"`
 	AssetsInView   []string `json:"assetsInView"`
@@ -23,6 +24,13 @@ type RelevantObject struct {
 	ObjectLocation string   `json:"objectlocation" bson:"object_location"`
 	Description    string   `json:"description" bson:"description"`
 	Actions        []string `json:"actions" bson:"actions"`
+}
+
+type ActionContext struct {
+	ActionName string `json:"actionName" bson:"actionName"`
+	Token      string `json:"token" bson:"token"`
+	Stage      int    `json:"stage" bson:"stage"`
+	Permission bool   `json:"permission" bson:"permission"`
 }
 
 /*

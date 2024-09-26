@@ -1,12 +1,8 @@
 package entities
 
 type Player struct {
-	ID          string
-	Username    string
-	Password    string
-	Application string
-}
-
-type PlayerHistory struct {
-	ID string
+	ID       string `json:"_id" bson:"_id"`
+	Username string `json:"username" bson:"username"`
+	Password string `json:"password" bson:"password"`
+	History  string `json:"history" bson:"history"`
 }

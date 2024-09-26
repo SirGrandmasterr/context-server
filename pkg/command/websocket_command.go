@@ -36,8 +36,9 @@ func (cmd *WebsocketCommand) Run(clictx *cli.Context) {
 		}
 		return fiber.ErrUpgradeRequired
 	})
-	storage := storage.NewStorageReader(cmd.Log, cmd.Db)
-	server := websocketServer.NewWebSocket(cmd.Log, validator.New(), *storage)
+	storager := storage.NewStorageReader(cmd.Log, cmd.Db)
+	storagewr := storage.NewStorageWriter(cmd.Log, cmd.Db)
+	server := websocketServer.NewWebSocket(cmd.Log, validator.New(), *storager, *storagewr)
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		// c.Locals is added to the *websocket.Conn
 		log.Println(c.Locals("allowed"))  // true
