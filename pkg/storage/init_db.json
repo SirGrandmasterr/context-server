@@ -78,7 +78,7 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Explain to the visitor what actions are currently available.", "type": "actionselection", "material": []},
-                {"stage": 2, "stage_instructions": "Explain to the visitor what actions are currently available.", "type": "speech", "material": ["options"]}
+                {"stage": 2, "stage_instructions": "Explain briefly to me what actions are currently available. You will find a list of json types containing the names and descriptions of each action, go through each of them and explain them in your own words. Do not deviate from the descriptions more than absolutely necessary.", "type": "speech", "material": ["options"]}
             ]
 
 

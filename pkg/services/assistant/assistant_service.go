@@ -159,7 +159,7 @@ func (srv *Service) AskAssistant(ctx context.Context, msg entities.WebSocketMess
 func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities.Instructions) {
 
 	method := "POST"
-	prompt, err := srv.assembleInstructionsPrompt(msg, inst)
+	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "museumAssistant")
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
@@ -167,7 +167,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 	payloadObject := entities.LlmRequest{
 		Stream:      true,
 		NPredict:    500,
-		Temperature: 1.2,
+		Temperature: 0.8,
 		Stop: []string{
 			"</s>",
 			"<|end|>",
@@ -287,7 +287,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 }
 
 func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
-	prompt, err := srv.assembleInstructionsPrompt(msg, inst)
+	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
@@ -410,9 +410,9 @@ func (srv *Service) assemblePrompt(msg entities.WebSocketMessage) (string, error
 	return prompt, nil
 }
 
-func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, inst entities.Instructions) (string, error) {
+func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, inst entities.Instructions, basepromptstr string) (string, error) {
 	prompt := ""
-	baseprompt, err := srv.Storage.ReadBasePrompt("analysisMachine", context.Background())
+	baseprompt, err := srv.Storage.ReadBasePrompt(basepromptstr, context.Background())
 	if err != nil {
 		srv.Log.Errorln("Error reading Baseprompt from DB")
 	}
@@ -434,8 +434,12 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 	case "speech": // Will be sent to big LLM
 		prompt += "Here is what happened so far:"
 		prompt += player.History + "\n"
-		prompt += "Currently" + ""
+		prompt += "Currently" + " "
 		prompt += inst.StageInstructions + "\n"
+		for _, avac := range material {
+			prompt += `{"name": "` + avac.Name + `",` + `"description":"` + avac.Description + `"}` + "\n"
+		}
+		prompt += "ASSISTANT: "
 		break
 	case "actionquery":
 		prompt += inst.StageInstructions + "\n"
