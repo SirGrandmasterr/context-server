@@ -5,7 +5,7 @@
             "description": "Position yourself next to the visitor.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionquery" }
+                {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionselection" }
             ]
         },
         {
@@ -14,7 +14,7 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the object in question.","type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Analyze the words of the visitor to determine which of these objects you should approach: ","type": "actionquery"}
+                {"stage": 2, "stage_instructions": "Analyze the input to find the material closest to the description. ","type": "actionquery", "material": ["locations", "objects"]}
             ]
         },
         {
@@ -22,7 +22,7 @@
             "description": "Walk around the gallery.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionquery" }
+                {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" }
             ]
         },
         {
@@ -44,6 +44,15 @@
             
         },
         {
+            "actionname": "investigate",
+            "description": "Move to the approximate location of the event and look for things that seem unusual.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Move to the approximate location of the event and look for things that seem unusual.", "type": "actionselection", "material": [] },
+                {"stage": 2, "stage_instructions": "Select the correct location to move to out of the following locations.", "type": "actionquery" ,"material": ["locations"]}
+            ]
+        },
+        {
             "actionname": "leadToLocation",
             "description": "This action makes you show the visitor the way to a different location.",
             "stages": 4,
@@ -57,11 +66,11 @@
         {
             "actionname": "playMusic",
             "description": "Query the music provider Blankframe for background music and let the visitor listen to it.",
-            "stages": 4,
+            "stages": 3,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Query the music provider Blankframe for background music and let the visitor listen to it.", "type": "actionselection"},
                 {"stage": 2, "stage_instructions": "Extract from the input the adjectives or genres that describe requested music. Here is an example: \n INPUT: I'd like to listen to something energetic. \n ASSISTANT: {\"result\": \"energetic\"}", "type": "playerSpeechAnalysis",  "material": []},
-                {"stage": 3, "stage_instructions": "Sadly no music was found, inform the visitor that they might need to request different music.", "type": "speech", "unityResponse": true}
+                {"stage": 3, "stage_instructions": "Sadly no music was found, inform the visitor that they might need to request different music.", "type": "speech", "permissionRequired": true}
             ]
         },
         {

@@ -45,7 +45,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln(err)
 		}
 
-		action, _ := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel)
+		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel)
 		ap.Log.Infoln("Detected Action", action)
 		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
 		ap.Log.Infoln("Found Action in Database:", action_db)
@@ -55,9 +55,10 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 		}
 		ap.Log.Infoln("Creating ActionToken")
 		tok := entities.ActionToken{
-			ID:          primitive.NewObjectID(),
-			Name:        action_db.ActionName,
-			Description: action_db.Description,
+			ID:           primitive.NewObjectID(),
+			Name:         action_db.ActionName,
+			Description:  action_db.Description,
+			CurrentStage: 0,
 		}
 		ap.Log.Infoln("Saving ActionToken, ", tok)
 		_, err = ap.aserv.StorageWriter.SaveActionToken(tok, context.Background())
@@ -65,21 +66,9 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln("Error during saving of action token: ", err)
 			return
 		}
-		ap.Log.Infoln("CheckingSingleStage")
-		// In this case there is only an actionselection stage and we can return immediately.
-		/*if action_db.Stages == 1 {
-			ap.Log.Infoln("Sending back answer due to single-stage")
-			answer := entities.WebSocketAnswer{
-				Type:       "action",
-				Text:       "",
-				ActionName: action_db.ActionName,
-				Token:      primitive.ObjectID{},
-			}
-			ap.responseChannel <- &answer
-			return
-		}*/
-		instructionCounter := 0 //Needed to validate if all instructions are done
-		ap.InstructionsLoop(instructionCounter, action_db, tok, msg, false)
+
+		//Needed to validate if all instructions are done
+		ap.InstructionsLoop(action_db, tok, msg, false)
 
 	case "playerHistoryUpdate":
 		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
@@ -92,54 +81,138 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln(err)
 		}
 	case "actionUpdate":
-		/*_, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
-		if err != nil {
-			ap.Log.Errorln("Error retrieving player", err)
-		}*/
-		tok, err := ap.aserv.Storage.ReadActionToken(context.Background(), msg.Token)
+
+		tok, err := ap.aserv.Storage.ReadActionToken(context.Background(), msg.ActionContext.Token)
 		if err != nil {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
+
 		action, err := ap.aserv.Storage.ReadActionOptionEntity(tok.Name, context.Background())
 		if err != nil {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
-		ap.InstructionsLoop(tok.CurrentStage, action, tok, msg, true)
+		ap.Log.Infoln("About to begin instructionsloop with ", tok)
+		tok.CurrentStage = tok.CurrentStage - 1 // We are repeating the stage that we aborted the loop at
+		ap.InstructionsLoop(action, tok, msg, true)
+
+	case "envEvent":
+		actionResponse := ap.aserv.DecideReaction(context.Background(), msg, ap.serviceChannel)
+
+		if actionResponse.ActionName == "ignore" {
+			ap.Log.Infoln("Event was ignored.")
+			answer := entities.WebSocketAnswer{
+				Type:       "action",
+				Text:       "Event was ignored.",
+				ActionName: "ignore",
+				Token:      primitive.NilObjectID,
+				Stage:      0,
+			}
+			ap.responseChannel <- &answer
+		} else {
+			action_db, err := ap.aserv.Storage.ReadActionOptionEntity(actionResponse.ActionName, context.Background())
+			ap.Log.Infoln("Found Action in Database:", action_db)
+			if err != nil {
+				ap.Log.Errorln(err)
+				return
+			}
+			ap.Log.Infoln("Creating ActionToken")
+			tok := entities.ActionToken{
+				ID:           primitive.NewObjectID(),
+				Name:         action_db.ActionName,
+				Description:  action_db.Description,
+				CurrentStage: 0,
+			}
+			ap.Log.Infoln("Saving ActionToken, ", tok)
+			_, err = ap.aserv.StorageWriter.SaveActionToken(tok, context.Background())
+			if err != nil {
+				ap.Log.Errorln("Error during saving of action token: ", err)
+				return
+			}
+
+			//Needed to validate if all instructions are done
+			ap.InstructionsLoop(action_db, tok, msg, false)
+		}
 	}
 
 }
 
-func (ap *AssistantProcess) InstructionsLoop(stageCounter int, action_db entities.Action, tok entities.ActionToken, msg entities.WebSocketMessage, actionUpdate bool) {
-	for stageCounter <= action_db.Stages-1 {
-		inst := action_db.Instructions[stageCounter]
+func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok entities.ActionToken, msg entities.WebSocketMessage, actionUpdate bool) {
+	for tok.CurrentStage <= action_db.Stages-1 {
+		inst := action_db.Instructions[tok.CurrentStage]
+		tok.CurrentStage = tok.CurrentStage + 1
+		err := ap.updateToken(tok.CurrentStage, tok)
+		if err != nil {
+			ap.Log.Errorln(err)
+		}
 		ap.Log.Infoln("Entering Instructions-Loop")
 		switch inst.Type {
 		case "actionselection":
-			if inst.Conditional {
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
 				return
 			}
-			answer := entities.WebSocketAnswer{
-				Type:       "action",
-				Text:       "",
-				ActionName: action_db.ActionName,
-				Token:      tok.ID,
-				Stage:      inst.Stage,
+			if inst.Stage == 1 {
+				ap.Log.Infoln("PreparingWebSocketAnswer in Loop")
+				answer := entities.WebSocketAnswer{
+					Type:       "action",
+					Text:       "",
+					ActionName: action_db.ActionName,
+					Token:      tok.ID,
+					Stage:      inst.Stage,
+				}
+				ap.responseChannel <- &answer
+				_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			}
-			ap.responseChannel <- &answer
 
 		case "actionquery":
-			if inst.Conditional && !msg.ActionContext.Permission {
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
 				return
 			}
 			ap.Log.Infoln("Instructionloop: actionquery.", "Stage: ", rune(inst.Stage))
+			result, err := ap.aserv.ActionQuery(msg, inst, action_db.ActionName)
+			if err != nil {
+				ap.Log.Errorln(err)
+			}
+			result.Token = tok.ID
+			result.Stage = inst.Stage
+			ap.responseChannel <- &result
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 		case "objectselection":
-			if inst.Conditional && !msg.ActionContext.Permission {
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
 				return
 			}
 			ap.Log.Infoln("Instructionloop: objectselection.", "Stage: ", rune(inst.Stage))
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 		case "playerSpeechAnalysis":
-			if inst.Conditional && !msg.ActionContext.Permission {
-
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
+				return
 			}
 			//In this type the LLM needs to filter out relevant info from the users words.
 			ap.Log.Infoln("Instructionloop: objectselection.", "Stage: ", rune(inst.Stage))
@@ -151,28 +224,57 @@ func (ap *AssistantProcess) InstructionsLoop(stageCounter int, action_db entitie
 			result.Token = tok.ID
 			result.Stage = inst.Stage
 			ap.responseChannel <- &result
-
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 		case "speech":
-			if inst.Conditional && !msg.ActionContext.Permission {
-				ap.aserv.StorageWriter.UpdateActionTokenStage(tok.ID, inst.Stage, context.Background())
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				//This means that, while looping, we made it to a stage that requires the 3D-Client to tell us if this stage is necessary.
+				//
+				if actionUpdate {
+					ap.Log.Infoln("CurrentStage: ", tok.CurrentStage, " perm req, none give, action update given")
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						ap.Log.Infoln("CurrentStage: ", tok.CurrentStage, " perm req, none give, action update given, deleted true")
+						return
+					}
+					ap.Log.Infoln("CurrentStage: ", tok.CurrentStage, " perm req, none give, action update given, deleted false")
+					continue
+				}
 				return
 			}
+
 			ap.aserv.StreamAssistant(msg, inst)
 
-			if stageCounter == inst.Stage-1 {
-				//Action completed.
-				ap.Log.Infoln("Action " + action_db.ActionName + " completed at stage " + string(inst.Stage))
-				ap.aserv.StorageWriter.DeleteActionToken(tok.ID, context.Background())
-				return
-			}
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			break
 		}
-		stageCounter++
 		//This is only ever true in actionUpdate, and is supposed to be used for one instruction only.
 		msg.ActionContext.Permission = false
 		//Update gives Permission fo
 		actionUpdate = false
 	}
+}
+
+func (ap *AssistantProcess) CheckDeleteToken(numStages int, tok entities.ActionToken) (bool, error) {
+	if tok.CurrentStage == numStages {
+		//Action completed.
+		ap.Log.Infoln("Action " + tok.Name + " completed at stage " + string(tok.CurrentStage))
+		err := ap.aserv.StorageWriter.DeleteActionToken(tok.ID, context.Background())
+		if err != nil {
+			ap.Log.Errorln(err)
+			return true, err
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func (ap *AssistantProcess) updateToken(currentStage int, tok entities.ActionToken) error {
+	err := ap.aserv.StorageWriter.UpdateActionTokenStage(tok.ID, currentStage, context.Background())
+	if err != nil {
+		ap.Log.Errorln(err)
+		return err
+	}
+	return nil
 }
 
 //ap.Log.Infoln(action.ActionName)

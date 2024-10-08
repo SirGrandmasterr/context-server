@@ -1,5 +1,7 @@
 package entities
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type AssistantContext struct {
 	Location           string   `json:"location"`
 	PlayerVisible      bool     `json:"playerVisible"`
@@ -27,10 +29,15 @@ type RelevantObject struct {
 }
 
 type ActionContext struct {
-	ActionName string `json:"actionName" bson:"actionName"`
-	Token      string `json:"token" bson:"token"`
-	Stage      int    `json:"stage" bson:"stage"`
-	Permission bool   `json:"permission" bson:"permission"`
+	ActionName string             `json:"actionName" bson:"actionName"`
+	Token      primitive.ObjectID `json:"token" bson:"token"`
+	Stage      int                `json:"stage" bson:"stage"`
+	Permission bool               `json:"permission" bson:"permission"`
+}
+
+type EventContext struct {
+	RelevantObjects []string `json:"relevantObjects" bson:"relevantObjects"`
+	EventLocation   string   `json:"eventLocation" bson:"eventLocation"`
 }
 
 /*

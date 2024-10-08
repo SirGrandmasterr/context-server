@@ -28,7 +28,7 @@ func (cmd *MigrateCommand) Run(cliCtx *cli.Context) error {
 	if err != nil {
 		cmd.Log.Errorln(err)
 	}
-	jsonFile, err := os.Open(`./pkg/storage/init_db.json`)
+	jsonFile, err := os.Open(`./pkg/storage/init/init_db.json`)
 
 	if err != nil {
 		cmd.Log.Errorln(err)

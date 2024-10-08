@@ -6,6 +6,8 @@ services:
     container_name: llamawhisperer
     restart: unless-stopped
     build: .
+    volumes:
+      - ./pkg/storage/init:/src/pkg/storage/init
 
     ports:
       - "8079:8079"

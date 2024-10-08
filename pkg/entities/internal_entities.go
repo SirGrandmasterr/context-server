@@ -20,14 +20,13 @@ type Action struct {
 }
 
 type Instructions struct {
-	Stage             int      `json:"stage" bson:"stage"`
-	StageInstructions string   `json:"stage_instructions" bson:"stage_instructions"`
-	Type              string   `json:"type" bson:"type"` //actionselection, speech, actionquery, speechAnalysis
-	UnityResponse     bool     `json:"unityResponse" bson:"unityResponse"`
-	Material          []string `json:"material" bson:"material"`
-	ResultVar         string   `json:"resultVar" bson:"resultVar"`
-	Limit             int      `json:"limit" bson:"limit"` //Word limit in speech analysis type
-	Conditional       bool     `json:"conditional" bson:"conditional"`
+	Stage              int      `json:"stage" bson:"stage"`
+	StageInstructions  string   `json:"stage_instructions" bson:"stage_instructions"`
+	Type               string   `json:"type" bson:"type"` //actionselection, speech, actionquery, speechAnalysis
+	Material           []string `json:"material" bson:"material"`
+	ResultVar          string   `json:"resultVar" bson:"resultVar"`
+	Limit              int      `json:"limit" bson:"limit"` //Word limit in speech analysis type
+	PermissionRequired bool     `json:"permissionRequired" bson:"permissionRequired"`
 }
 
 type LlmActionResponse struct {

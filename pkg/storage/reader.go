@@ -69,6 +69,7 @@ func (strg *StorageReader) ReadAllObjects(ctx context.Context) ([]entities.Relev
 
 func (strg *StorageReader) ReadPlayer(username string, ctx context.Context) (entities.Player, error) {
 	playerCollection := strg.Db.Collection("players")
+	strg.Log.Infoln("Searching for Player: ", username)
 	var player entities.Player
 	err := playerCollection.FindOne(ctx, bson.D{{Key: "username", Value: username}}).Decode(&player)
 	if err != nil {
@@ -88,6 +89,17 @@ func (strg *StorageReader) ReadAllLocations(ctx context.Context) ([]entities.Loc
 		return locs, err
 	}
 	return locs, nil
+}
+
+func (strg *StorageReader) ReadLocation(name string, ctx context.Context) (entities.Location, error) {
+	locationCollection := strg.Db.Collection("locations")
+	var loc entities.Location
+	err := locationCollection.FindOne(ctx, bson.D{{Key: "location_name", Value: name}}).Decode(&loc)
+	if err != nil {
+		strg.Log.Panicln("Error in ReadPlayer", err)
+		return entities.Location{}, err
+	}
+	return loc, nil
 }
 
 func (strg *StorageReader) ReadActionToken(ctx context.Context, id primitive.ObjectID) (entities.ActionToken, error) {

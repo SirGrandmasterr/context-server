@@ -16,3 +16,4 @@ make-setup:
 
 #./llama-server.exe -m '.\models\tinyllama-1.1b-chat-v1.0.Q8_0(1).gguf' -c 512 -ngl 50 
 #./llama-server.exe -m .\models\Meta-Llama-3.1-8B-Instruct-Q6_K.gguf -c 512 -ngl 50
+#./llama-server.exe -m .\models\Llama-3.2-1B-Instruct-Q8_0.gguf -c 512 -ngl 50

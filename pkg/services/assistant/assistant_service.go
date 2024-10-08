@@ -39,7 +39,7 @@ var url_stream = "http://host.docker.internal:8081/completion"
 var url = "http://host.docker.internal:8080/completion"
 var method = "POST"
 
-func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) (entities.LlmActionResponse, string) {
+func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) entities.LlmActionResponse {
 	prompt, err := srv.assemblePrompt(msg)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
@@ -50,7 +50,7 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 	if err != nil {
 		srv.Log.Errorln(err)
 		srv.Log.Infoln(err)
-		return entities.LlmActionResponse{}, ""
+		return entities.LlmActionResponse{}
 	}
 
 	client := &http.Client{}
@@ -59,19 +59,19 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		srv.Log.Infoln(err)
-		return entities.LlmActionResponse{}, ""
+		return entities.LlmActionResponse{}
 	}
 	res, err := client.Do(req)
 	if err != nil {
 		srv.Log.Infoln(err)
-		return entities.LlmActionResponse{}, ""
+		return entities.LlmActionResponse{}
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		srv.Log.Infoln(err)
-		return entities.LlmActionResponse{}, ""
+		return entities.LlmActionResponse{}
 	}
 	var serverResponse entities.AssistantResponse
 	var detectedAction entities.LlmActionResponse
@@ -84,8 +84,55 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 		srv.Log.Errorln(err)
 	}
 
-	return detectedAction, ""
+	return detectedAction
 
+}
+
+func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) entities.LlmActionResponse {
+	prompt, err := srv.assembleEnvEventPrompt(msg)
+	if err != nil {
+		srv.Log.Panicln(err, "PromptAssembly failed")
+	}
+	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg))
+	payload, err := json.Marshal(payload_struct)
+	if err != nil {
+		srv.Log.Errorln(err)
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+	req.Header.Add("Accept", "text/event-stream")
+	req.Header.Add("Content-Type", "application/json")
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.LlmActionResponse{}
+	}
+	var serverResponse entities.AssistantResponse
+	var detectedAction entities.LlmActionResponse
+	err = json.Unmarshal(body, &serverResponse)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	err = json.Unmarshal([]byte(serverResponse.Content), &detectedAction)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+
+	return detectedAction
 }
 
 func (srv *Service) AskAssistant(ctx context.Context, msg entities.WebSocketMessage) (entities.AssistantAction, error) {
@@ -339,6 +386,58 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	}, nil
 }
 
+func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
+	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleMaterialChoiceGrammar(msg, inst))
+	payload, err := json.Marshal(payload_struct)
+	if err != nil {
+		srv.Log.Errorln(err)
+		srv.Log.Infoln(err)
+		return entities.WebSocketAnswer{}, err
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+	req.Header.Add("Accept", "text/event-stream")
+	req.Header.Add("Content-Type", "application/json")
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.WebSocketAnswer{}, err
+	}
+	srv.Log.Infoln("Payload for ActionQuery: ", payload_struct)
+	res, err := client.Do(req)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.WebSocketAnswer{}, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return entities.WebSocketAnswer{}, err
+	}
+	var serverResponse entities.AssistantResponse
+	var result entities.LlmAnalysisResult
+	err = json.Unmarshal(body, &serverResponse)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	srv.Log.Infoln("Serverresponse for PlayerSpeechAnalysis: ", serverResponse)
+	err = json.Unmarshal([]byte(serverResponse.Content), &result)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	srv.Log.Infoln("Result: ", result.Result)
+	return entities.WebSocketAnswer{
+		Type:       inst.Type,
+		Text:       result.Result,
+		ActionName: actionName,
+	}, nil
+}
+
 func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float32, prompt string, grammar string) entities.LlmRequest {
 	return entities.LlmRequest{
 		Stream:      stream,
@@ -410,6 +509,31 @@ func (srv *Service) assemblePrompt(msg entities.WebSocketMessage) (string, error
 	return prompt, nil
 }
 
+func (srv *Service) assembleEnvEventPrompt(msg entities.WebSocketMessage) (string, error) {
+	prompt := ""
+	baseprompt, err := srv.Storage.ReadBasePrompt(msg.AssistantContext.SelectedBasePrompt, context.Background())
+	if err != nil {
+		srv.Log.Errorln("Error reading Baseprompt from DB")
+	}
+
+	assistantLocation, err := srv.Storage.ReadLocation(msg.AssistantContext.Location, context.Background())
+	prompt += baseprompt.Prompt + "\n"
+	prompt += "You are currently located at the " + assistantLocation.LocationName + ". \n"
+	prompt += assistantLocation.Description + "\n"
+	prompt += srv.getActivityState(msg) + "\n"
+	prompt += "Something happened: \n"
+	prompt += msg.Speech + "\n"
+	prompt += "You have " + string(len(msg.AssistantContext.AvailableActions)) + " options, what do you want to do?" + "\n"
+	for _, opt := range msg.AssistantContext.AvailableActions {
+		action, err := srv.Storage.ReadActionOptionEntity(opt, context.Background())
+		if err != nil {
+			return prompt, err
+		}
+		prompt += `{"` + action.ActionName + `": "` + action.Description + `}` + "\n"
+	}
+	return prompt, nil
+}
+
 func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, inst entities.Instructions, basepromptstr string) (string, error) {
 	prompt := ""
 	baseprompt, err := srv.Storage.ReadBasePrompt(basepromptstr, context.Background())
@@ -443,12 +567,14 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 		break
 	case "actionquery":
 		prompt += inst.StageInstructions + "\n"
+		prompt += "INPUT: " + msg.Speech + "\n"
+		prompt += "MATERIAL: \n"
 		var focus entities.Material
 		hasFocus := false
 		counter := 1
 		for _, mat := range material {
 			if mat.Type != "focus" {
-				prompt += string(counter) + ". " + mat.Name + ", " + mat.Description + "\n"
+				prompt += `{"name": "` + mat.Name + `",` + `"description":"` + mat.Description + `"}` + "\n"
 				counter++
 			} else {
 				focus = mat
@@ -489,6 +615,30 @@ space ::= | " " | "\n" [ \t]{0,20}`
 	return grammar
 }
 
+func (srv *Service) assembleMaterialChoiceGrammar(msg entities.WebSocketMessage, inst entities.Instructions) string {
+	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	len := len(material)
+	result := "("
+	for i, st := range material {
+		result += `"\"`
+		result += st.Name
+		result += `\""`
+		if i != len-1 {
+			result += ` | `
+		}
+	}
+	result += ")"
+	grammar := `result ::= ` + result + ` space
+result-kv ::= "\"result\"" space ":" space result
+root ::= "{" space result-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}`
+	srv.Log.Infoln("grammar: ", grammar)
+	return grammar
+}
+
 func (srv *Service) assembleGrammarString() string {
 	//makes the llm return something like "{"query": "somestring"}"
 	grammar := `char ::= [^"\\\x7F\x00-\x1F] | [\\] (["\\bfnrt] | "u" [0-9a-fA-F]{4})
@@ -497,4 +647,26 @@ root ::= "{" space result-kv "}" space
 space ::= | " " | "\n" [ \t]{0,20}
 string ::= "\"" char* "\"" space`
 	return grammar
+}
+
+func (srv *Service) getActivityState(msg entities.WebSocketMessage) string {
+	text := ""
+	switch msg.AssistantContext.WalkingState {
+	case "idle":
+		text += "You currently stand idle. "
+	case "patrolling":
+		text += "You are currently patrolling the area, searching for things out of place. "
+	case "followPlayer":
+		text += "You are currently following a visitor around."
+	case "moving":
+		text += "You are currently moving towards your destination."
+	}
+	if msg.AssistantContext.PlayerVisible {
+		text += "A Visitor is in your field of vision. "
+	}
+	if msg.PlayerContext.InConversation {
+		text += "You are currently in conversation with a visitor."
+	}
+	return text
+
 }
