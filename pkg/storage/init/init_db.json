@@ -2,7 +2,7 @@
     "actions": [
         {
             "actionname": "walkToVisitor",
-            "description": "Position yourself next to the visitor.",
+            "description": "Approach the visitor",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionselection" }
@@ -10,19 +10,36 @@
         },
         {
             "actionname": "walkToObject",
-            "description": "Position yourself next to the object in question.",
+            "description": "Approach the location, object or artwork specified by the visitor. ",
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the object in question.","type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Analyze the input to find the material closest to the description. ","type": "actionquery", "material": ["locations", "objects"]}
+                {"stage": 2, "stage_instructions": "Analyze the input to find the material closest to the description. ","type": "actionquery", "material": ["locations"]}
             ]
         },
         {
             "actionname": "patrol",
-            "description": "Walk around the gallery.",
+            "description": "Walk around the gallery and stay vigilant.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" }
+            ]
+        },
+        {
+            "actionname": "standIdle",
+            "description": "Stand around, lost in thought.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" }
+            ]
+        },
+        {
+            "actionname": "admireArt",
+            "description": "Choose one of the art pieces in your vicinity and look at it for a bit.",
+            "stages": 2,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" },
+                {"stage": 2, "stage_instructions": "Choose at random. ","type": "actionquery", "material": ["objects"]}
             ]
         },
         {
@@ -46,10 +63,30 @@
         {
             "actionname": "investigate",
             "description": "Move to the approximate location of the event and look for things that seem unusual.",
-            "stages": 1,
+            "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Move to the approximate location of the event and look for things that seem unusual.", "type": "actionselection", "material": [] },
                 {"stage": 2, "stage_instructions": "Select the correct location to move to out of the following locations.", "type": "actionquery" ,"material": ["locations"]}
+            ]
+        },
+        {
+            "actionname": "repair",
+            "description": "If an object was recently broken, you can fix it with this action.",
+            "stages": 5,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "If an object was recently broken, you can fix it with this action.", "type": "actionselection", "material": [] },
+                {"stage": 2, "stage_instructions": "Select the correct location to move to out of the following locations.", "type": "actionquery" ,"material": ["focus"], "permissionRequired": true},
+                {"stage": 3, "stage_instructions": "Follow the visitor.", "type": "actionselection", "material": ["options"], "permissionRequired": true},
+                {"stage": 4, "stage_instructions": "Remind the visitor to be careful as to not destroy the property of the gallery.", "type": "speech"},
+                {"stage": 5, "stage_instructions": "Stop following the visitor.", "type": "actionselection", "material": ["options"], "permissionRequired": true}
+            ] 
+        },
+        {
+            "actionname": "ignore",
+            "description": "Do absolutely nothing. Chose this only if you do not think that dealing with this is your job.",
+            "stages": 1,
+            "instructions": [
+                {"stage": 1, "stage_instructions": "Do nothing.", "type": "actionselection", "material": [] }
             ]
         },
         {
@@ -58,9 +95,9 @@
             "stages": 4,
             "instructions": [
                 {"stage": 1, "stage_instructions": "This action makes you show the visitor the way to a different location.", "type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Inform the visitor what location you'll be leading him to.", "type": "speech"},
-                {"stage": 3, "stage_instructions": "Analyze the words of the visitor to determine which of these locations you should approach: ", "type": "actionquery"},
-                {"stage": 4, "stage_instructions": "Inform the visitor that you have arrived at the location.", "type": "speech"}
+                {"stage": 2, "stage_instructions": "Analyze the words of the visitor to determine which of these locations you should approach: ", "type": "actionquery"},
+                {"stage": 3, "stage_instructions": "Inform the visitor what location you'll be leading him to.", "type": "speech"},
+                {"stage": 4, "stage_instructions": "Inform the visitor that you have arrived at the location.", "type": "speech", "permissionRequired": true}
             ]
         },
         {
@@ -83,11 +120,11 @@
         },
         {
             "actionname": "explainWhatYouCanDo",
-            "description": "Choose this action if the visitor wants to know which actions you can choose from, or what you're capable of doing.",
+            "description": "Choose this action if the visitor wants to know which action you can choose from, or what you're capable of doing.",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Explain to the visitor what actions are currently available.", "type": "actionselection", "material": []},
-                {"stage": 2, "stage_instructions": "Explain briefly to me what actions are currently available. You will find a list of json types containing the names and descriptions of each action, go through each of them and explain them in your own words. Do not deviate from the descriptions more than absolutely necessary.", "type": "speech", "material": ["options"]}
+                {"stage": 1, "stage_instructions": "Explain to the visitor what action are currently available.", "type": "actionelection", "material": []},
+                {"stage": 2, "stage_instructions": "Explain briefly what action are currently available. Here is a list containing the names and descriptions of each action, go through each of them and explain them in your own words. Do not deviate from the descriptions more than absolutely necessary.", "type": "speech", "material": ["options"]}
             ]
 
 
@@ -97,7 +134,7 @@
             "description": "Give the visitor information about a piece of art that the two of you are looking at.",
             "stages": 4,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Give the visitor information about a piece of art that the two of you are looking at.", "type": "actionselection"},
+                {"stage": 1, "stage_instructions": "Give the visitor information about a piece of art that the two of you are looking at.", "type": "actionelection"},
                 {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know about the current piece of art the two of you are looking at.", "type": "speech", "material": ["focus"]}
             ]
         },
@@ -106,13 +143,13 @@
             "description": "Provide the visitor with information about a piece of art or the Gallery.",
             "stages": 4,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Choose this action if the visitor requested general information about the museum/gallery or its exhibition pieces.", "type": "actionselection"},
+                {"stage": 1, "stage_instructions": "Choose this action if the visitor requested general information about the museum/gallery or its exhibition pieces.", "type": "actionelection"},
                 {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know out of the provided contextual information", "type": "speech", "material": ["worldContext", "objects"]}
             ]
         },
         {
             "actionname": "continueConversation",
-            "description": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.",
+            "description": "No specific action is requested, the visitor is conversing with you. This action lets you answer as you please.",
             "stages": 1,
             "instructions":[
                 {"stage": 1, "stage_instructions": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.", "type": "speech"}
@@ -126,241 +163,303 @@
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
             "description": "The image shows an abstract swirl of orange and red smoke against a black background. The smoke is thick and billowing, creating a sense of movement and energy. The contrast between the dark background and the bright colors of the smoke makes the image visually striking.",
-            "actions": ""
+            "artist": "Markus Foley"
         },
         {
             "objectname": "Sugar_Smoke",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
             "description": "The image is an abstract photograph of pink and yellow ink swirling and mixing in water. The colors are vibrant and the movement of the ink is dynamic, creating a sense of energy and fluidity. The pink ink is closer to the viewer and appears to be in the foreground, while the yellow ink is behind it. The two colors create a striking contrast, and the way they blend together creates a beautiful and ethereal effect.",
-            "actions": ""
+            "artist": "Kyron Carroll"
         },
         {
             "objectname": "Crystalline_Architecture",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
             "description": "The image is a black and white photo of a modern staircase that has seemingly been built into a metal ceiling. The staircase is made of flat metal panels that have a texture of small dots. The space between the steps is also made of the same metal. The railings of the stairs are made of a darker metal and disappear into the shadows. The light hits the metal stairs and ceiling in a way that creates a sense of depth and dimension. The image is clean and minimalist, and it creates a sense of modern and industrial architecture.",
-            "actions": ""
+            "artist": "Elspeth Winter"
         },
         {
             "objectname": "Yellow_Fantasy",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
             "description": "The image is a fantasy scene with a mysterious, dark feel. The setting features a large, bare tree with branches stretching into the sky. The tree is set against a backdrop of a bright orange, red, and yellow sky with wispy light purple clouds and lightning. Behind the tree is a cliff with a dark, rocky surface. In the background, a majestic castle sits atop a floating island, surrounded by white clouds. The castle is dark and imposing, with a tall tower and many spires, suggesting a sense of power and mystery. Multiple birds are flying in formation across the sky, adding to the scene's ethereal feel. The birds, dark in color, add to the sense of mystery and foreboding. The overall mood of the image is one of mystery and intrigue, with a sense of grandeur and wonder. The floating island and castle suggest a realm of fantasy and dreams, while the dark tree and birds add an element of foreboding. The image evokes a feeling of both beauty and danger, leaving the viewer to wonder what secrets lie within this magical world",
-            "actions": ""
+            "artist": "Stuart Hebert"
         },
         {
             "objectname": "Lapis_Mosaic",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
             "description": "This is an abstract piece of art made from colorful glass tiles. There are different shades of blue, turquoise, green, red, and yellow. The pieces are arranged in a spiral pattern, making it seem like a swirling, colorful vortex. The pattern is created by a variety of shapes and sizes of glass tiles. The edges of the pieces are smooth and shiny, like polished glass. The overall effect is vibrant, cheerful, and slightly psychedelic.",
-            "actions": ""
+            "artist": "Josephine Ingram"
         },
         {
             "objectname": "Religious_Illustration",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A painting of women and children being served by angels in the sky, in a style like the renaissance.",
+            "artist": "James Hardy"
         },
         {
             "objectname": "Sole_Orchid",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A photograph of a pink origami orchid on a turquoise background.",
+            "artist": "Demi-Leigh Dale"
         },
         {
             "objectname": "Color_Scheme",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Seven thick brush strokes of yellow, orange, red, magenta, indigo, blue and turquoise.",
+            "artist": "Elise Lester"
         },
         {
             "objectname": "Psychotic_Faces",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Three faces in oversaturated cubism. The two on the outside look at the one in the middle, who looks focused but motionless.",
+            "artist": "Clarence Mason"
         },
         {
             "objectname": "Three_Women",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A greyscale photograph of three women dancing, the one in the middle wearing wide, white pants, the two left and right wear black ones. Around them fly petals of unknown flowers.",
+            "artist": "Alia Wheeler"
         },
         {
             "objectname": "Four_Stones",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Four rounded stones arranged in a line, wearing different accessories, implying personification. Second one from the right wears glasses.",
+            "artist": "Jaime Daniels"
         },
         {
             "objectname": "Fish_Stones",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Stones found at the sea, arranged to look like fish bones, on a wooden background.",
+            "artist": "Clara Holland"
         },
         {
             "objectname": "Colorless_Petals",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A bouquet photographed from very close, showing a dark rose blossom in the center and white roses around.",
+            "artist": "Chelsea Larsen"
         },
         {
             "objectname": "Psychedelic_Tiger",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Blobs of paint merging into a photorealistic, roaring head of a tiger.",
+            "artist": "Hollie Grimes"
         },
         {
             "objectname": "Oversaturated_Bird",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A kingfisher on yellow background, surrounded by an aura of specks of color based on the tint of his feathers.",
+            "artist": "Alfie Clark"
         },
         {
             "objectname": "Abstract_Colors",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Abstract Art. There's a heart in the middle, but the assistant isn't a fan of it.",
+            "artist": "Alexis Frank"
         },
         {
             "objectname": "Wavy_Blue",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Layers of blue, reminiscent of a cross-section of ice in the arctis.",
+            "artist": "Jemima Townsend"
         },
         {
             "objectname": "House_Sea",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A house in read, on a sea of mist. What could its story be?",
+            "artist": "Erica Washington"
         },
         {
             "objectname": "Burn_Victim",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A statue of a head, stern, adorned with ornaments reminiscing constellations of scars.",
+            "artist": "Annabelle Mcdonald"
         },
         {
             "objectname": "Cellular_Degradation",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "The picture is divided between white and violet, each side trying to overpower the other. It feels biological, like cells adapting to their surroundings.",
+            "artist": "Bethan Lin"
         },
         {
             "objectname": "Infantile_Scriptures",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Chaotic lines. You seem to recognize patterns, but then they look like nothing to you.",
+            "artist": "Zubair Phillips"
         },
         {
             "objectname": "Blue_Bird",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Digital painting. A bird on a branch, blue background, the branch green and full of white flowers. The bird is blue and glorious.",
+            "artist": "Ethan Young"
         },
         {
             "objectname": "Boaty_McBoatface",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A boat, bright red and blue. It does not swim. It emanates an aura of kinetic energy.",
+            "artist": "Santiago Boone"
         },
         {
             "objectname": "Geologist_Required",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "I believe this is some form of mineral. An agate, perhaps.",
+            "artist": "Aysha Warner"
         },
         {
             "objectname": "True_art",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A spiral of orange peel, a dachshund standing on it, beeing spiraled like the peel himself. He stares at a fairy with red hair and violet wings.",
+            "artist": "Donald Randolph"
         },
         {
             "objectname": "Pixelated_Woman",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A sensual women, dissolving into crystalline structures.",
+            "artist": "Camilla Foster"
         },
         {
             "objectname": "Pencil_Advert",
             "objecttype": "painting",
             "objectlocation": "upper_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Noone knows how this ended up in this gallery, clearly this is just an advertisement for pencils.",
+            "artist": ""
         },
         {
             "objectname": "Aquarell_City",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "An aquarel of an unknown city, featuring a man next to his blue car on a wide street between humble houses.",
+            "artist": "Rosalie Christensen"
         },
         {
             "objectname": "Psychedelic_Dog",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "An unnaturally colorful bust of a dog. He looks happy. He is the best boy.",
+            "artist": "Mariyah Campos"
         },
         {
             "objectname": "Desert_Wanderer",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A man and two camels travels the desert, arriving at the statue of a pharao. The sky is a vibrant blue.",
+            "artist": "Annabella Roth"
         },
         {
             "objectname": "Rainbow_Guitar",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Who doesn't want his guitar to be in front of a black background and agressively colorful.",
+            "artist": "Albie Solomon"
         },
         {
             "objectname": "Abstract_Flowers",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "Violet, blue and white are the dominant colors in this work. The depicted flowers quite possibly relate to the tragic backstory of the artist.",
+            "artist": "Trinity Vaughn"
         },
         {
             "objectname": "Oversized_Violin",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
-            "description": "",
-            "actions": ""
+            "description": "A violin in the desert, ten times taller than the man standing beside it.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Twin_Mask_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "Two circles, part of a whole. Eyes, too, are just holes, really.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Bull_Market_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "A bronze bull, reminiscent of the wall street market.",
+            "artist": "Fred Ferguson"
+        },
+        {
+            "objectname": "Thinking_Cube_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "A sculpture called the thinking cube. It was very expensive. Why?",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Sad_Mask_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "A grey mask, tears like blood. Maybe they saw their tax returns.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Exhibitionist_Goddess_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "A golden statuette of a polygonic woman, topless, armless, her lower body draped in cloth.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Naked_Programmer_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "The bronce statue of a rough man, lost in thought.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Lich_Skull_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "Bronce statue of a skull. Maybe, if you wait long enough, he'll share his wisdom.",
+            "artist": "Kristina Connolly"
+        },
+        {
+            "objectname": "Bent_Metal_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "Even the chain of a a mid-sized fishing boat can be art if you bend it enough.",
+            "artist": "Kristina Connolly"
+        },{
+            "objectname": "Angry_Finger_Sculpture",
+            "objecttype": "sculpture",
+            "objectlocation": "lower_gallery",
+            "description": "A hand, made from polished bronce. It looks longing, angry and frightful at the same time.",
+            "artist": "Kristina Connolly"
         }
         
 
     ],
     "locations": [
-        {"locationName": "lower_gallery", "description": "The lower gallery is the part of the museum where all its sculptures are situated. It can be reached from the upper gallery by descending the stairs."},
-        {"locationName": "upper_gallery", "description": "The upper gallery is the part of the museum where only paintings can be found. It can be reached from the lower gallery by ascending the stairs."}
+        {"locationName": "lower_gallery", "description": "The place where all the sculptures are located. Downstairs."},
+        {"locationName": "upper_gallery", "description": "Only paintings and the exit are located here. Upstairs."}
     ],
     "baseprompts": [
-        {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain actions."},  
+        {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain artist."},  
         {"promptName":"analysisMachine", "prompt": "This is the thought process of a machine that analyzes natural language. It receives a task and an input, and analyzes the input based on the task provided. It offers the result in a json, like so: {\"result\":\"result of the task\""}    
     ],
     "players": [

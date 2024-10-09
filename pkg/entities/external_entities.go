@@ -25,7 +25,7 @@ type RelevantObject struct {
 	ObjectType     string   `json:"objecttype" bson:"object_type"`
 	ObjectLocation string   `json:"objectlocation" bson:"object_location"`
 	Description    string   `json:"description" bson:"description"`
-	Actions        []string `json:"actions" bson:"actions"`
+	Artist         []string `json:"artist" bson:"artist"`
 }
 
 type ActionContext struct {

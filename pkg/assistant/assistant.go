@@ -32,6 +32,9 @@ func NewAssistantProcess(log *zap.SugaredLogger, clientResponseChan chan *entiti
 
 func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 	switch msg.MessageType {
+	case "initializePlayer":
+		//Wipe Player History, we don't have enough context window for extended sessions.
+		ap.aserv.StorageWriter.ResetPlayerHistory(msg.PlayerContext.PlayerUsername)
 	case "speech":
 
 		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
@@ -45,7 +48,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln(err)
 		}
 
-		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel)
+		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 1.2)
 		ap.Log.Infoln("Detected Action", action)
 		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
 		ap.Log.Infoln("Found Action in Database:", action_db)
@@ -132,6 +135,31 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			//Needed to validate if all instructions are done
 			ap.InstructionsLoop(action_db, tok, msg, false)
 		}
+	case "innerThoughtEvent":
+		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 2)
+		ap.Log.Infoln("Detected Action", action)
+		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
+		ap.Log.Infoln("Found Action in Database:", action_db)
+		if err != nil {
+			ap.Log.Errorln(err)
+			return
+		}
+		ap.Log.Infoln("Creating ActionToken")
+		tok := entities.ActionToken{
+			ID:           primitive.NewObjectID(),
+			Name:         action_db.ActionName,
+			Description:  action_db.Description,
+			CurrentStage: 0,
+		}
+		ap.Log.Infoln("Saving ActionToken, ", tok)
+		_, err = ap.aserv.StorageWriter.SaveActionToken(tok, context.Background())
+		if err != nil {
+			ap.Log.Errorln("Error during saving of action token: ", err)
+			return
+		}
+
+		//Needed to validate if all instructions are done
+		ap.InstructionsLoop(action_db, tok, msg, false)
 	}
 
 }
@@ -168,6 +196,24 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 				}
 				ap.responseChannel <- &answer
 				_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
+			} else {
+				ac := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 1.2)
+				secondaryAction, err := ap.aserv.Storage.ReadActionOptionEntity(ac.ActionName, context.Background())
+				if err != nil {
+					ap.Log.Errorln(err)
+				}
+				answer := entities.WebSocketAnswer{
+					Type:       "actionSelection",
+					Text:       secondaryAction.ActionName,
+					ActionName: action_db.ActionName,
+					Token:      tok.ID,
+					Stage:      inst.Stage,
+				}
+				if secondaryAction.Stages != 1 {
+					answer.Text = "ignore"
+				}
+				ap.responseChannel <- &answer
+				_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			}
 
 		case "actionquery":
@@ -189,19 +235,6 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 			result.Token = tok.ID
 			result.Stage = inst.Stage
 			ap.responseChannel <- &result
-			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
-		case "objectselection":
-			if inst.PermissionRequired && !msg.ActionContext.Permission {
-				if actionUpdate {
-					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
-					if deleted {
-						return
-					}
-					continue
-				}
-				return
-			}
-			ap.Log.Infoln("Instructionloop: objectselection.", "Stage: ", rune(inst.Stage))
 			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 		case "playerSpeechAnalysis":
 			if inst.PermissionRequired && !msg.ActionContext.Permission {

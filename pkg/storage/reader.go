@@ -28,7 +28,7 @@ func (strg *StorageReader) ReadActionOptionEntity(name string, ctx context.Conte
 	var action entities.Action
 	err := actionCollection.FindOne(ctx, bson.M{"action_name": name}).Decode(&action)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadActionOptionEntity", err)
+		strg.Log.Panicln("Error in ReadActionOptionEntity for ", name, err)
 		return entities.Action{}, err
 	}
 	return action, nil
@@ -48,9 +48,10 @@ func (strg *StorageReader) ReadBasePrompt(name string, ctx context.Context) (ent
 func (strg *StorageReader) ReadSingleObject(name string, ctx context.Context) (entities.RelevantObject, error) {
 	basePromptCollection := strg.Db.Collection("objects")
 	var relObject entities.RelevantObject
-	err := basePromptCollection.FindOne(ctx, bson.M{"objectName": name}).Decode(&relObject)
+	strg.Log.Infoln("Trying to read ", name)
+	err := basePromptCollection.FindOne(ctx, bson.M{"object_name": name}).Decode(&relObject)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadBasePrompt", err)
+		strg.Log.Panicln("Error in ReadSingleObject", err)
 		return entities.RelevantObject{}, err
 	}
 	return relObject, nil

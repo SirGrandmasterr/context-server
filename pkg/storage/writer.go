@@ -74,7 +74,7 @@ func (strg *StorageWriter) SaveObject(object entities.RelevantObject, ctx contex
 		{Key: "object_type", Value: object.ObjectType},
 		{Key: "object_location", Value: object.ObjectLocation},
 		{Key: "description", Value: object.Description},
-		{Key: "actions", Value: object.Actions}}}}
+		{Key: "actions", Value: object.Artist}}}}
 	_, err := objectCollection.UpdateOne(context.Background(), filter, update, opts)
 	if err != nil {
 		strg.Log.Errorln("Error inserting Object", err)
@@ -159,7 +159,7 @@ func (strg *StorageWriter) SavePlayers(pl entities.Player, ctx context.Context) 
 }
 
 func (strg *StorageWriter) UpdatePlayerHistory(username string, history string) error {
-	strg.Log.Infoln("Function called.")
+	strg.Log.Infoln("Updating Player History")
 	playerCollection := strg.Db.Collection("players")
 	filter := bson.D{{Key: `username`, Value: username}}
 	update := bson.D{{Key: "$set", Value: bson.D{
@@ -168,6 +168,20 @@ func (strg *StorageWriter) UpdatePlayerHistory(username string, history string) 
 	_, err := playerCollection.UpdateOne(context.Background(), filter, update, nil)
 	if err != nil {
 		strg.Log.Errorln("Error updating Player History", err)
+	}
+	return nil
+}
+
+func (strg *StorageWriter) ResetPlayerHistory(username string) error {
+	strg.Log.Infoln("Resetting Player History")
+	playerCollection := strg.Db.Collection("players")
+	filter := bson.D{{Key: `username`, Value: username}}
+	update := bson.D{{Key: "$set", Value: bson.D{
+		{Key: "history", Value: "Visitor entered the Gallery."},
+	}}}
+	_, err := playerCollection.UpdateOne(context.Background(), filter, update, nil)
+	if err != nil {
+		strg.Log.Errorln("Error wiping Player History", err)
 	}
 	return nil
 }

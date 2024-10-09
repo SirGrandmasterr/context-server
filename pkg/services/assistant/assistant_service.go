@@ -39,13 +39,17 @@ var url_stream = "http://host.docker.internal:8081/completion"
 var url = "http://host.docker.internal:8080/completion"
 var method = "POST"
 
-func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) entities.LlmActionResponse {
+func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer, temp float32) entities.LlmActionResponse {
 	prompt, err := srv.assemblePrompt(msg)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
-
-	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg))
+	var payload_struct entities.LlmRequest
+	if msg.MessageType == "innerThoughtEvent" {
+		payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 10)
+	} else {
+		payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 5)
+	}
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -93,7 +97,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
-	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg))
+	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 5)
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -230,21 +234,21 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 			"VISITOR"},
 		RepeatLastN:      0,
 		RepeatPenalty:    1,
-		TopK:             0,
+		TopK:             15,
 		TopP:             1,
 		MinP:             0.05,
 		TfsZ:             1,
 		TypicalP:         1,
 		PresencePenalty:  0,
 		FrequencyPenalty: 0,
-		Mirostat:         0,
+		Mirostat:         2,
 		MirostatTau:      5,
 		MirostatEta:      0.1,
 		Grammar:          "",
 		NProbs:           0,
 		MinKeep:          0,
 		ImageData:        []interface{}{},
-		CachePrompt:      false,
+		CachePrompt:      true,
 		APIKey:           "",
 		Prompt:           prompt,
 	}
@@ -339,7 +343,7 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 		srv.Log.Errorln(err)
 	}
 	grammar := srv.assembleGrammarString()
-	payloadobj := srv.AssemblePayload(250, false, 0.5, prompt, grammar)
+	payloadobj := srv.AssemblePayload(250, false, 0.5, prompt, grammar, 5)
 	payload, err := json.Marshal(payloadobj)
 	if err != nil {
 		fmt.Println(err)
@@ -391,7 +395,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
-	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleMaterialChoiceGrammar(msg, inst))
+	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleMaterialChoiceGrammar(msg, inst), 5)
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -438,7 +442,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 	}, nil
 }
 
-func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float32, prompt string, grammar string) entities.LlmRequest {
+func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float32, prompt string, grammar string, mirostat int) entities.LlmRequest {
 	return entities.LlmRequest{
 		Stream:      stream,
 		NPredict:    npredict,
@@ -458,15 +462,15 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 			"VISITOR"},
 		RepeatLastN:      0,
 		RepeatPenalty:    1,
-		TopK:             0,
+		TopK:             15,
 		TopP:             1,
 		MinP:             0.05,
 		TfsZ:             1,
 		TypicalP:         1,
 		PresencePenalty:  0,
 		FrequencyPenalty: 0,
-		Mirostat:         0,
-		MirostatTau:      5,
+		Mirostat:         2,
+		MirostatTau:      mirostat,
 		MirostatEta:      0.1,
 		Grammar:          grammar,
 		NProbs:           0,
@@ -486,17 +490,25 @@ func (srv *Service) assemblePrompt(msg entities.WebSocketMessage) (string, error
 	}
 	prompt := ""
 	baseprompt, err := srv.Storage.ReadBasePrompt("museumAssistant", context.Background())
+	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
 	if err != nil {
 		srv.Log.Errorln("Error reading Baseprompt from DB")
 	} //Find Setting
 	prompt += baseprompt.Prompt
 	prompt += "You are positioned on the lower level of the museum where all sculptures are located." //Location
-	prompt += "Currently, you stand idle as a visitor speaks to you."                                 //Get state from msg
-	prompt += "Detect whether or not the visitor wants you to take one of the following actions: \n"
+	prompt += srv.getActivityState(msg)
+	if msg.MessageType != "innerThoughtEvent" { //Get state from msg
+		prompt += "Detect whether or not the visitor wants you to take one of the following actions: \n"
+	}
 	for _, avac := range mats {
 		prompt += `{"` + avac.Name + `": "` + avac.Description + `}` + "\n"
 	}
-	prompt += "\n\n\n\nVISITOR: " + msg.Speech
+	if msg.MessageType != "innerThoughtEvent" {
+		prompt += "\n\n\n\nVISITOR: " + msg.Speech
+	} else {
+		prompt += "Here is what happened recently: \n"
+		prompt += player.History
+	}
 	prompt += "\nASSISTANT:"
 
 	//srv.Storage.ReadActionOptionEntity()
@@ -523,7 +535,7 @@ func (srv *Service) assembleEnvEventPrompt(msg entities.WebSocketMessage) (strin
 	prompt += srv.getActivityState(msg) + "\n"
 	prompt += "Something happened: \n"
 	prompt += msg.Speech + "\n"
-	prompt += "You have " + string(len(msg.AssistantContext.AvailableActions)) + " options, what do you want to do?" + "\n"
+	prompt += "In your role as the assistant who is responsible for the museum, what should you do?" + "\n"
 	for _, opt := range msg.AssistantContext.AvailableActions {
 		action, err := srv.Storage.ReadActionOptionEntity(opt, context.Background())
 		if err != nil {
@@ -666,6 +678,9 @@ func (srv *Service) getActivityState(msg entities.WebSocketMessage) string {
 	}
 	if msg.PlayerContext.InConversation {
 		text += "You are currently in conversation with a visitor."
+	}
+	if msg.MessageType == "innerThoughtEvent" {
+		text += "You had nothing to do for a while, and you are bored. What do you want to do?"
 	}
 	return text
 
