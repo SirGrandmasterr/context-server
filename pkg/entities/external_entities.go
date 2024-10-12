@@ -19,15 +19,6 @@ type PlayerContext struct {
 	InConversation bool     `json:"inConversation"`
 	AssetsInView   []string `json:"assetsInView"`
 }
-
-type RelevantObject struct {
-	ObjectName     string   `json:"objectname" bson:"object_name"`
-	ObjectType     string   `json:"objecttype" bson:"object_type"`
-	ObjectLocation string   `json:"objectlocation" bson:"object_location"`
-	Description    string   `json:"description" bson:"description"`
-	Artist         []string `json:"artist" bson:"artist"`
-}
-
 type ActionContext struct {
 	ActionName string             `json:"actionName" bson:"actionName"`
 	Token      primitive.ObjectID `json:"token" bson:"token"`

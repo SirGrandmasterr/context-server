@@ -28,6 +28,13 @@ type Instructions struct {
 	Limit              int      `json:"limit" bson:"limit"` //Word limit in speech analysis type
 	PermissionRequired bool     `json:"permissionRequired" bson:"permissionRequired"`
 }
+type RelevantObject struct {
+	ObjectName     string   `json:"objectname" bson:"object_name"`
+	ObjectType     string   `json:"objecttype" bson:"object_type"`
+	ObjectLocation string   `json:"objectlocation" bson:"object_location"`
+	Description    string   `json:"description" bson:"description"`
+	Artist         []string `json:"artist" bson:"artist"`
+}
 
 type LlmActionResponse struct {
 	ActionName string `json:"action"`
