@@ -1,0 +1,42 @@
+name: llama-server
+services:
+    llama.cpp_small:
+        restart: always
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities:
+                              - gpu
+        volumes:
+            - ./models:/models
+        ports:
+            - 8011:8011
+        image: ghcr.io/ggerganov/llama.cpp:server-cuda
+        command: -m
+            /models/Llama-3.2-1B-Instruct-Q8_0.gguf
+            --port 8011 --host 0.0.0.0 -n 512 --n-gpu-layers 99 -c 5000
+    llama.cpp_big:
+        restart: always
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities:
+                              - gpu
+        volumes:
+            - ./models:/models
+        ports:
+            - 8012:8012
+        image: ghcr.io/ggerganov/llama.cpp:server-cuda
+        command: -m
+            /models/Llama-3.1-8B-Ultra-Instruct-Q6_K.gguf
+            --port 8012 --host 0.0.0.0 -n 512 --n-gpu-layers 99 -c 12000
+volumes:
+    C:
+        external: true
+        name: C
