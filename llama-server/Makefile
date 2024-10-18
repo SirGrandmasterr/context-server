@@ -1,5 +1,5 @@
 download_big:
-    huggingface-cli download bartowski/Llama-3.1-8B-Ultra-Instruct-GGUF --include "Llama-3.1-8B-Ultra-Instruct-Q6_K.gguf" --local-dir ./models \
+    huggingface-cli download bartowski/Llama-3.1-8B-Ultra-Instruct-GGUF --include "Llama-3.1-8B-Ultra-Instruct-Q6_K.gguf" --local-dir ./models 
 
 	
 
