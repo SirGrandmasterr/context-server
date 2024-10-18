@@ -1,6 +1,8 @@
 package entities
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type BasePrompt struct {
 	Prompt     string `json:"prompt" bson:"prompt"`
@@ -27,6 +29,8 @@ type Instructions struct {
 	ResultVar          string   `json:"resultVar" bson:"resultVar"`
 	Limit              int      `json:"limit" bson:"limit"` //Word limit in speech analysis type
 	PermissionRequired bool     `json:"permissionRequired" bson:"permissionRequired"`
+	BasePrompt         string   `json:"baseprompt"  bson:"basePrompt"` //What should the Assistant imagine itself to be for this stage?
+	LlmSize            string   `json:"llmSize" bson:"llmSize"`        //big or small
 }
 type RelevantObject struct {
 	ObjectName     string   `json:"objectname" bson:"object_name"`
@@ -57,13 +61,3 @@ type ActionToken struct {
 	Description  string             `json:"description" bson:"description"`
 	CurrentStage int                `json:"currentStage" bson:"currentStage"`
 }
-
-/*
- "stages": 4,
-            "instructions": [
-                {"stage": 1, "instructions": "This action makes you show the visitor the way to a different location.", "type": "actionselection"},
-                {"stage": 2, "instructions": "Inform the visitor what location you'll be leading him to.", "type": "speech"},
-                {"stage": 3, "instructions": "Analyze the words of the visitor to determine which of these locations you should approach: ", "type": "actionquery"},
-                {"stage": 4, "instructions": "Inform the visitor that you have arrived at the location.", "type": "speech"}
-            ]
-*/

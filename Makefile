@@ -1,7 +1,7 @@
 compose = docker compose
 
 make-migrate-up:
-	docker compose exec llamawhisperer bash -c './llm-whisperer migrate'
+	docker compose exec llamawhisperer sh -c './llm-whisperer migrate'
 
 make-up:
 	$(compose) up -d

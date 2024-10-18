@@ -1,6 +1,7 @@
 package assistant
 
 import (
+	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/storage"
 	"bufio"
@@ -35,8 +36,8 @@ func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serCha
 
 }
 
-var url_stream = "http://host.docker.internal:8081/completion"
-var url = "http://host.docker.internal:8080/completion"
+var urlSmall = config.NewSpecification().LlmSmall
+var urlBig = config.NewSpecification().LlmBig
 var method = "POST"
 
 func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer, temp float32) entities.LlmActionResponse {
@@ -58,7 +59,7 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(method, urlSmall, bytes.NewBuffer(payload))
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -106,7 +107,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(method, urlSmall, bytes.NewBuffer(payload))
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -139,76 +140,13 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	return detectedAction
 }
 
-func (srv *Service) AskAssistant(ctx context.Context, msg entities.WebSocketMessage) (entities.AssistantAction, error) {
-	method := "POST"
-
-	var payload_struct = entities.LlmRequest{
-		Stream:      false,
-		NPredict:    400,
-		Temperature: 1.2,
-		Stop: []string{"</s>",
-			"Attendant:",
-			"Overlord:"},
-		RepeatLastN:      256,
-		RepeatPenalty:    1.18,
-		TopK:             40,
-		TopP:             0.95,
-		MinP:             0.05,
-		TfsZ:             1,
-		TypicalP:         1,
-		PresencePenalty:  0,
-		FrequencyPenalty: 0,
-		Mirostat:         0,
-		MirostatTau:      5,
-		MirostatEta:      0.1,
-		Grammar: `action-kv ::= "\"action\"" space ":" space integer
-		boolean ::= ("true" | "false") space
-		integer ::= ("-"? ([0-9] | [1-9] [0-9]*)) space
-		root ::= "{" space action-kv "," space speech-kv "}" space
-		space ::= " "?
-		speech-kv ::= "\"speech\"" space ":" space boolean
-		`,
-		NProbs:      0,
-		MinKeep:     0,
-		ImageData:   []interface{}{},
-		CachePrompt: true,
-		APIKey:      "",
-		Prompt:      "",
-	}
-	payload, err := json.Marshal(payload_struct)
-	if err != nil {
-		fmt.Println(err)
-		return entities.AssistantAction{}, nil
-	}
-
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(payload))
-
-	if err != nil {
-		fmt.Println(err)
-		return entities.AssistantAction{}, nil
-	}
-	req.Header.Add("Accept", "text/event-stream")
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return entities.AssistantAction{}, nil
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		return entities.AssistantAction{}, nil
-	}
-	fmt.Println(string(body))
-	return entities.AssistantAction{}, nil
-}
-
 func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities.Instructions) {
-
+	url := ""
+	if inst.LlmSize == "small" {
+		url = urlSmall
+	} else {
+		url = urlBig
+	}
 	method := "POST"
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "museumAssistant")
 	if err != nil {
@@ -338,6 +276,12 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 }
 
 func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
+	url := ""
+	if inst.LlmSize == "small" {
+		url = urlSmall
+	} else {
+		url = urlBig
+	}
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -391,6 +335,12 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 }
 
 func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
+	url := ""
+	if inst.LlmSize == "big" {
+		url = urlBig
+	} else {
+		url = urlSmall
+	}
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
 		srv.Log.Errorln(err)

@@ -3,7 +3,6 @@ package storage
 import (
 	"Llamacommunicator/pkg/entities"
 	"context"
-	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -28,7 +27,7 @@ func (strg *StorageReader) ReadActionOptionEntity(name string, ctx context.Conte
 	var action entities.Action
 	err := actionCollection.FindOne(ctx, bson.M{"action_name": name}).Decode(&action)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadActionOptionEntity for ", name, err)
+		strg.Log.Errorln("Error in ReadActionOptionEntity for ", name, err)
 		return entities.Action{}, err
 	}
 	return action, nil
@@ -39,7 +38,7 @@ func (strg *StorageReader) ReadBasePrompt(name string, ctx context.Context) (ent
 	var prompt entities.BasePrompt
 	err := basePromptCollection.FindOne(ctx, bson.M{"prompt_name": name}).Decode(&prompt)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadBasePrompt", err)
+		strg.Log.Errorln("Error in ReadBasePrompt", err)
 		return entities.BasePrompt{}, err
 	}
 	return prompt, nil
@@ -51,7 +50,7 @@ func (strg *StorageReader) ReadSingleObject(name string, ctx context.Context) (e
 	strg.Log.Infoln("Trying to read ", name)
 	err := basePromptCollection.FindOne(ctx, bson.M{"object_name": name}).Decode(&relObject)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadSingleObject", err)
+		strg.Log.Errorln("Error in ReadSingleObject", err)
 		return entities.RelevantObject{}, err
 	}
 	return relObject, nil
@@ -61,8 +60,12 @@ func (strg *StorageReader) ReadAllObjects(ctx context.Context) ([]entities.Relev
 	objCollection := strg.Db.Collection("objects")
 	var obs []entities.RelevantObject
 	cursor, err := objCollection.Find(context.Background(), bson.M{})
+	if err != nil {
+		strg.Log.Errorln(err)
+		return obs, err
+	}
 	if err = cursor.All(ctx, &obs); err != nil {
-		log.Fatal(err)
+		strg.Log.Errorln(err)
 		return obs, err
 	}
 	return obs, nil
@@ -74,7 +77,7 @@ func (strg *StorageReader) ReadPlayer(username string, ctx context.Context) (ent
 	var player entities.Player
 	err := playerCollection.FindOne(ctx, bson.D{{Key: "username", Value: username}}).Decode(&player)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadPlayer", err)
+		strg.Log.Errorln("Error in ReadPlayer", err)
 		return entities.Player{}, err
 	}
 	return player, nil
@@ -85,8 +88,11 @@ func (strg *StorageReader) ReadAllLocations(ctx context.Context) ([]entities.Loc
 	locationCollection := strg.Db.Collection("locations")
 	var locs []entities.Location
 	cursor, err := locationCollection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return locs, err
+	}
 	if err = cursor.All(ctx, &locs); err != nil {
-		log.Fatal(err)
+		strg.Log.Errorln(err)
 		return locs, err
 	}
 	return locs, nil
@@ -97,7 +103,7 @@ func (strg *StorageReader) ReadLocation(name string, ctx context.Context) (entit
 	var loc entities.Location
 	err := locationCollection.FindOne(ctx, bson.D{{Key: "location_name", Value: name}}).Decode(&loc)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadPlayer", err)
+		strg.Log.Errorln("Error in ReadPlayer", err)
 		return entities.Location{}, err
 	}
 	return loc, nil
@@ -108,7 +114,7 @@ func (strg *StorageReader) ReadActionToken(ctx context.Context, id primitive.Obj
 	var tok entities.ActionToken
 	err := actionTokenCollection.FindOne(ctx, bson.D{{Key: "_id", Value: id}}).Decode(&tok)
 	if err != nil {
-		strg.Log.Panicln("Error in ReadPlayer", err)
+		strg.Log.Errorln("Error in ReadPlayer", err)
 		return entities.ActionToken{}, err
 	}
 	return tok, nil

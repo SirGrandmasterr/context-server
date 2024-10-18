@@ -1,13 +1,15 @@
 package command
 
 import (
-	"Llamacommunicator/pkg/auth"
+	"Llamacommunicator/api/handler"
+	"Llamacommunicator/api/router"
+	"Llamacommunicator/pkg/storage"
 	"context"
 
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/keyauth/v2"
 	"github.com/urfave/cli"
 )
 
@@ -27,14 +29,18 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	app := fiber.New()
 	app.Use(cors.New())
 	app.Use(logger.New())
+	storageWriter := storage.NewStorageWriter(cmd.Log, db)
+	storageReader := storage.NewStorageReader(cmd.Log, db)
 
-	authService := auth.NewAuthService(cmd.Config)
+	//authService := auth.NewAuthService(cmd.Config)
+	app.Post("/login", handler.Login(storageReader))
+	app.Post("/create", handler.CreateUser(storageReader, storageWriter))
 
-	app.Use(keyauth.New(keyauth.Config{
-		Validator: authService.ValidateAPIKey,
+	app.Use(jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{Key: []byte("secret")},
 	}))
 
-	//api := app.Group("/api")
+	api := app.Group("/api")
 
 	//validator := validator.New()
 
@@ -42,6 +48,7 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	//assistantService := assistant.NewAssistantService(cmd.Log, validator)
 
 	//router.AssistantRouter(api, assistantService)
+	router.PlayerRouter(api)
 
 	cmd.BaseCommand.Log.Fatal(app.Listen(":8079"))
 }
