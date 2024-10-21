@@ -2,7 +2,7 @@
     "actions": [
         {
             "actionname": "walkToVisitor",
-            "description": "Approach the visitor",
+            "description": "If the visitor requests the assistant to come over, move over, or any other paraphrasing of words that imply that the assistant is supposed to walk to the visitor, this has to be chosen.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionselection" }
@@ -10,16 +10,16 @@
         },
         {
             "actionname": "walkToObject",
-            "description": "Approach the location, object or artwork specified by the visitor. ",
+            "description": "If the visitor requests the assistant to move, walk or similar to a specific picture, artwork, sculpture, area or location that is not the visitor himself, this has to be chosen. ",
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the object in question.","type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Analyze the input to find the material closest to the description. ","type": "actionquery", "material": ["locations"]}
+                {"stage": 2, "stage_instructions": "Analyze the input to deduce, which of the provided material descriptions fit the request best. Output the corresponding   ","type": "actionquery", "material": ["locations", "objects"], "llmSize": "big"}
             ]
         },
         {
             "actionname": "patrol",
-            "description": "Walk around the gallery and stay vigilant.",
+            "description": "The Assistant patrol the gallery, staying vigilant.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" }
@@ -27,7 +27,7 @@
         },
         {
             "actionname": "standIdle",
-            "description": "Stand around, lost in thought.",
+            "description": "The assistant stands around, lost in thought.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Walk around the gallery.","type": "actionselection" }
@@ -44,7 +44,7 @@
         },
         {
             "actionname": "followVisitor",
-            "description": "Follow the visitor",
+            "description": "If the Assistant is requested to join, follow, accompany, etc. by the visitor, this action has to be chosen. Do not chose this if the assistant is being asked to move somewhere else.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Follow the visitor.", "type": "actionselection"}
@@ -53,7 +53,7 @@
         },
         {
             "actionname": "stopFollowingVisitor",
-            "description": "Stop Following the Visitor.",
+            "description": "The assistant is being asked to stop following the visitor around.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Stop following the Visitor.", "type": "actionselection"}
@@ -66,12 +66,12 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Move to the approximate location of the event and look for things that seem unusual.", "type": "actionselection", "material": [] },
-                {"stage": 2, "stage_instructions": "Select the correct location to move to out of the following locations.", "type": "actionquery" ,"material": ["locations"], "llmSize": "big"}
+                {"stage": 2, "stage_instructions": "Read through what happened so far and find the most recent event that asks could warrant an investigation in the role of an employee of the gallery. Choose the location out of the offered locations where the incident happened.", "type": "actionquery" ,"material": ["locations"], "llmSize": "big"}
             ]
         },
         {
             "actionname": "repair",
-            "description": "If an object was recently broken, you can fix it with this action.",
+            "description": "An Artwork has recently been damaged, and choosing this action will repair it. Considering that waiting longer might damage the artworks further, it is recommended to choose this action whenever it is available.",
             "stages": 5,
             "instructions": [
                 {"stage": 1, "stage_instructions": "If an object was recently broken, you can fix it with this action.", "type": "actionselection", "material": [] },
@@ -120,7 +120,7 @@
         },
         {
             "actionname": "explainWhatYouCanDo",
-            "description": "Choose this action if the visitor wants to know which action you can choose from, or what you're capable of doing.",
+            "description": "This action makes the assistant explain to the visitor what he is capable of. Do not choose this option if the visitor is asking about opionions, the gallery, artpieces of any synonym thereof.",
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Explain to the visitor what action are currently available.", "type": "actionselection", "material": []},
@@ -131,8 +131,8 @@
         },
         {
             "actionname": "provideArtInformation",
-            "description": "Give the visitor information about a piece of art that the two of you are looking at.",
-            "stages": 4,
+            "description": "If the Assistant is in a conversation with the visitor, and the visitor requests any kind of information or opionion about a picture, piece of art, sculpture, or anything synonymous, this action needs to be chosen.",
+            "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Give the visitor information about a piece of art that the two of you are looking at.", "type": "actionselection"},
                 {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know about the current piece of art the two of you are looking at.", "type": "speech", "material": ["focus"]}
@@ -140,8 +140,8 @@
         },
         {
             "actionname": "provideGeneralInformation",
-            "description": "Provide the visitor with information about a piece of art or the Gallery.",
-            "stages": 4,
+            "description": "If the Assistant is in a conversation with the visitor, and any kind of question about exhibition pieces, art-pieces or the museum are being asked, this option has to be chosen.",
+            "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Choose this action if the visitor requested general information about the museum/gallery or its exhibition pieces.", "type": "actionselection"},
                 {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know out of the provided contextual information", "type": "speech", "material": ["worldContext", "objects"]}
@@ -150,9 +150,10 @@
         {
             "actionname": "continueConversation",
             "description": "No specific action is requested, the visitor is conversing with you. This action lets you answer as you please.",
-            "stages": 1,
+            "stages": 2,
             "instructions":[
-                {"stage": 1, "stage_instructions": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.", "type": "speech"}
+                {"stage": 1, "stage_instructions": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Answer the visitor.", "type": "speech"}
             ]
         }
 
@@ -455,12 +456,13 @@
 
     ],
     "locations": [
-        {"locationName": "lower_gallery", "description": "The place where all the sculptures are located. Downstairs."},
-        {"locationName": "upper_gallery", "description": "Only paintings and the exit are located here. Upstairs."}
+        {"locationName": "lower gallery", "description": "The lower gallery is a part of the gallery you work in. It can be accessed via two stairs and houses all of the sculptures, as well as six paintings."},
+        {"locationName": "upper gallery", "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."}
     ],
     "baseprompts": [
-        {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You converse with visitors and elaborate about the exhibition pieces, and visitors can request you to take certain artist."},  
-        {"promptName":"analysisMachine", "prompt": "This is the thought process of a machine that analyzes natural language. It receives a task and an input, and analyzes the input based on the task provided. It offers the result in a json, like so: {\"result\":\"result of the task\""}    
+        {"promptName": "languageInterpreter", "prompt": "You are a language interpreter. You will be given a chronological report of occurrences as well as speech of a visitor, and a list of possible actions. The actions will be provided in a JSON format and each contain two properties: action and description. The model should output the name of the action whose description fits best to the speech of the visitor and its chronological context."},
+        {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You have a taciturn, but eloquent personality, preferring to use precise vocabulary but as few words as possible to express yourself. You are willing to follow every wish of visitors, should they talk to you."},  
+        {"promptName":"analysisMachine", "prompt": "You are a machine that analyzes natural language. It receives a task and an input, and analyzes the input based on the task provided. It outputs the result in a json, like so: {\"result\":\"result of the task\""}    
     ],
     "players": [
         {

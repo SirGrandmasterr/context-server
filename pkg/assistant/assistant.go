@@ -1,6 +1,7 @@
 package assistant
 
 import (
+	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/services/assistant"
 	"Llamacommunicator/pkg/storage"
@@ -20,13 +21,13 @@ type AssistantProcess struct {
 	aserv           assistant.Service
 }
 
-func NewAssistantProcess(log *zap.SugaredLogger, clientResponseChan chan *entities.WebSocketAnswer, stor *storage.StorageReader, storwr *storage.StorageWriter) *AssistantProcess {
+func NewAssistantProcess(log *zap.SugaredLogger, clientResponseChan chan *entities.WebSocketAnswer, stor *storage.StorageReader, storwr *storage.StorageWriter, conf *config.Specification) *AssistantProcess {
 	return &AssistantProcess{
 		clients:         make(map[*websocket.Conn]bool),
 		Log:             log,
 		responseChannel: clientResponseChan,
 		serviceChannel:  make(chan *entities.WebSocketAnswer),
-		aserv:           *assistant.NewAssistantService(log, validator.New(), clientResponseChan, stor, storwr),
+		aserv:           *assistant.NewAssistantService(log, validator.New(), clientResponseChan, stor, storwr, conf),
 	}
 }
 

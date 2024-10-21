@@ -23,33 +23,34 @@ type Service struct {
 	ClientResponseChannel chan *entities.WebSocketAnswer
 	Storage               *storage.StorageReader
 	StorageWriter         *storage.StorageWriter
+	Conf                  *config.Specification
 }
 
-func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serChan chan *entities.WebSocketAnswer, storage *storage.StorageReader, storagewriter *storage.StorageWriter) *Service {
+func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serChan chan *entities.WebSocketAnswer, storage *storage.StorageReader, storagewriter *storage.StorageWriter, conf *config.Specification) *Service {
 	return &Service{
 		Log:                   log,
 		Val:                   val,
 		ClientResponseChannel: serChan,
 		Storage:               storage,
 		StorageWriter:         storagewriter,
+		Conf:                  conf,
 	}
 
 }
 
-var urlSmall = config.NewSpecification().LlmSmall
-var urlBig = config.NewSpecification().LlmBig
 var method = "POST"
 
 func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer, temp float32) entities.LlmActionResponse {
 	prompt, err := srv.assemblePrompt(msg)
+	print("srv.Conf.LlmSmall ", srv.Conf.LlmSmall)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
 	var payload_struct entities.LlmRequest
 	if msg.MessageType == "innerThoughtEvent" {
-		payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 10)
+		payload_struct = srv.AssemblePayload(200, false, 0.7, prompt, srv.assembleActionGrammarEnum(msg), 10)
 	} else {
-		payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 5)
+		payload_struct = srv.AssemblePayload(200, false, 0.7, prompt, srv.assembleActionGrammarEnum(msg), 5)
 	}
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
@@ -59,7 +60,7 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, urlSmall, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(method, srv.Conf.LlmSmall, bytes.NewBuffer(payload))
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -107,7 +108,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, urlSmall, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(method, srv.Conf.LlmSmall, bytes.NewBuffer(payload))
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -143,9 +144,9 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities.Instructions) {
 	url := ""
 	if inst.LlmSize == "small" {
-		url = urlSmall
+		url = srv.Conf.LlmSmall
 	} else {
-		url = urlBig
+		url = srv.Conf.LlmBig
 	}
 	method := "POST"
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "museumAssistant")
@@ -156,7 +157,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 	payloadObject := entities.LlmRequest{
 		Stream:      true,
 		NPredict:    500,
-		Temperature: 0.8,
+		Temperature: 0.7,
 		Stop: []string{
 			"</s>",
 			"<|end|>",
@@ -171,9 +172,9 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 			"NARRATOR",
 			"VISITOR"},
 		RepeatLastN:      0,
-		RepeatPenalty:    1,
-		TopK:             15,
-		TopP:             1,
+		RepeatPenalty:    1.18,
+		TopK:             40,
+		TopP:             0.95,
 		MinP:             0.05,
 		TfsZ:             1,
 		TypicalP:         1,
@@ -278,9 +279,9 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
 	url := ""
 	if inst.LlmSize == "small" {
-		url = urlSmall
+		url = srv.Conf.LlmSmall
 	} else {
-		url = urlBig
+		url = srv.Conf.LlmBig
 	}
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
@@ -337,9 +338,9 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
 	url := ""
 	if inst.LlmSize == "big" {
-		url = urlBig
+		url = srv.Conf.LlmBig
 	} else {
-		url = urlSmall
+		url = srv.Conf.LlmSmall
 	}
 	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
@@ -411,8 +412,8 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 			"NARRATOR",
 			"VISITOR"},
 		RepeatLastN:      0,
-		RepeatPenalty:    1,
-		TopK:             15,
+		RepeatPenalty:    1.18,
+		TopK:             40,
 		TopP:             1,
 		MinP:             0.05,
 		TfsZ:             1,
@@ -439,26 +440,30 @@ func (srv *Service) assemblePrompt(msg entities.WebSocketMessage) (string, error
 		srv.Log.Errorln()
 	}
 	prompt := ""
-	baseprompt, err := srv.Storage.ReadBasePrompt("museumAssistant", context.Background())
+	baseprompt, err := srv.Storage.ReadBasePrompt("languageInterpreter", context.Background())
 	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
+	//location, err := srv.Storage.ReadLocation(msg.AssistantContext.Location, context.Background())
 	if err != nil {
 		srv.Log.Errorln("Error reading Baseprompt from DB")
 	} //Find Setting
-	prompt += baseprompt.Prompt
-	prompt += "You are positioned on the lower level of the museum where all sculptures are located." //Location
+	prompt += "<s>[INST] <<SYS>> \n" + baseprompt.Prompt + "<</SYS>>"
+	//prompt += "You are positioned at the " + location.LocationName + ": " + location.Description //Location
 	prompt += srv.getActivityState(msg)
 	if msg.MessageType != "innerThoughtEvent" { //Get state from msg
-		prompt += "Detect whether or not the visitor wants you to take one of the following actions: \n"
+		prompt += "You will be given a list : \n"
 	}
 	for _, avac := range mats {
-		prompt += `{"` + avac.Name + `": "` + avac.Description + `}` + "\n"
+		prompt += `{"action: ` + avac.Name + `", "description: ` + avac.Description + `}` + "\n"
 	}
+	prompt += "Here is what happened recently: \n"
+	prompt += player.History
+
 	if msg.MessageType != "innerThoughtEvent" {
-		prompt += "\n\n\n\nVISITOR: " + msg.Speech
-	} else {
-		prompt += "Here is what happened recently: \n"
-		prompt += player.History
+		prompt += "\n\n\n\nVISITOR: '" + msg.Speech + "'"
 	}
+	prompt += "Output the name of the action that fits best in this situation."
+	prompt += "[/INST]\n "
+
 	prompt += "\nASSISTANT:"
 
 	//srv.Storage.ReadActionOptionEntity()
@@ -506,7 +511,7 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
-	prompt += baseprompt.Prompt + "\n"
+	prompt += "<s>[INST] <<SYS>> \n" + baseprompt.Prompt + "<</SYS>>" + "\n"
 	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -515,7 +520,7 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 	switch inst.Type {
 	case "playerSpeechAnalysis": // Will be sent to small LLM
 		prompt += inst.StageInstructions + "\n"
-		prompt += "INPUT: " + msg.Speech + "\n"
+		prompt += "INPUT: " + msg.Speech + "\n + [/INST]"
 		break
 	case "speech": // Will be sent to big LLM
 		prompt += "Here is what happened so far:"
@@ -525,7 +530,7 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 		for _, avac := range material {
 			prompt += `{"name": "` + avac.Name + `",` + `"description":"` + avac.Description + `"}` + "\n"
 		}
-		prompt += "ASSISTANT: "
+		prompt += "[/INST]"
 		break
 	case "actionquery":
 		prompt += inst.StageInstructions + "\n"
@@ -544,14 +549,13 @@ func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, in
 			}
 		}
 		if hasFocus { //Save the focus for last, for relevancy
-			prompt += "Both you and the Visitor are intently staring at: \n"
-			prompt += focus.Name + ", " + focus.Description
+			prompt += "Both assistant and visitor are intently looking at: \n"
+			prompt += `{"name": "` + focus.Name + `",` + `"description":"` + focus.Description + `"}`
 		}
+		prompt += "[/INST]"
 	}
 	// prompt += location? actionselection, speech, actionquery, speechAnalysis
 	// prompt += playerState, etc.?
-
-	prompt += "ASSISTANT: "
 	return prompt, nil
 }
 

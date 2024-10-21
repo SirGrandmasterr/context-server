@@ -2,6 +2,7 @@ package websocketServer
 
 import (
 	"Llamacommunicator/pkg/assistant"
+	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/storage"
 	"encoding/json"
@@ -17,15 +18,17 @@ type WebSocketServer struct {
 	Val       *validator.Validate
 	Storage   storage.StorageReader
 	Storagewr storage.StorageWriter
+	Config    *config.Specification
 }
 
-func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate, storage storage.StorageReader, storagewr storage.StorageWriter) *WebSocketServer {
+func NewWebSocket(log *zap.SugaredLogger, val *validator.Validate, storage storage.StorageReader, storagewr storage.StorageWriter, conf *config.Specification) *WebSocketServer {
 	return &WebSocketServer{
 		clients:   make(map[*websocket.Conn]bool),
 		Log:       log,
 		Val:       val,
 		Storage:   storage,
 		Storagewr: storagewr,
+		Config:    conf,
 	}
 }
 
@@ -38,7 +41,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		conn.Close()
 	}()
 	var clientResponseChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
-	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage, &s.Storagewr)
+	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage, &s.Storagewr, s.Config)
 	go s.LoopForClientResponseChannel(conn, clientResponseChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
