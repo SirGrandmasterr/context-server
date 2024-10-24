@@ -35,17 +35,17 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:   "http",
+			Name:   "http", // ./llm-whisperer http
 			Usage:  "Start REST API service",
 			Action: httpCommand.Run,
 		},
 		{
-			Name:   "migrate",
+			Name:   "migrate", // ./llm-whisperer migrate
 			Usage:  "Upload init_db.json to mongodb",
 			Action: migrateCommand.Run,
 		},
 		{
-			Name:   "websocket",
+			Name:   "websocket", // ./llm-whisperer websocket
 			Usage:  "Start Websocket Server",
 			Action: websocketCommand.Run,
 		},

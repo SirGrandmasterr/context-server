@@ -1,6 +1,7 @@
 package command
 
 import (
+	"Llamacommunicator/api/handler"
 	websocketServer "Llamacommunicator/api/websocket"
 	"Llamacommunicator/pkg/storage"
 	"context"
@@ -49,6 +50,9 @@ func (cmd *WebsocketCommand) Run(clictx *cli.Context) {
 		server.HandleWebSocket(c)
 
 	}))
+	app.Get("/ping", handler.Pong())
+	app.Post("/login", handler.Login(storager))
+	app.Post("/create", handler.CreateUser(storager, storagewr))
 
 	log.Fatal(app.Listen(":3000"))
 }

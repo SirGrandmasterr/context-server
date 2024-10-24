@@ -1,7 +1,7 @@
 package websocketServer
 
 import (
-	"Llamacommunicator/pkg/assistant"
+	assistantProcess "Llamacommunicator/pkg/assistant"
 	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/storage"
@@ -41,7 +41,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		conn.Close()
 	}()
 	var clientResponseChannel chan *entities.WebSocketAnswer = make(chan *entities.WebSocketAnswer)
-	var assistant = assistant.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage, &s.Storagewr, s.Config)
+	var assistant = assistantProcess.NewAssistantProcess(s.Log, clientResponseChannel, &s.Storage, &s.Storagewr, s.Config)
 	go s.LoopForClientResponseChannel(conn, clientResponseChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
