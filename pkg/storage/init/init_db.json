@@ -44,7 +44,7 @@
         },
         {
             "actionname": "followVisitor",
-            "description": "If the Assistant is requested to join, follow, accompany, etc. by the visitor, this action has to be chosen. Do not chose this if the assistant is being asked to move somewhere else.",
+            "description": "If the Assistant is requested to join, follow, accompany, etc. by the visitor, this action has to be chosen.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Follow the visitor.", "type": "actionselection"}
