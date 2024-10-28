@@ -4,6 +4,7 @@ import (
 	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/services/assistant"
+	"Llamacommunicator/pkg/services/prompting"
 	"Llamacommunicator/pkg/storage"
 	"context"
 
@@ -27,7 +28,7 @@ func NewAssistantProcess(log *zap.SugaredLogger, clientResponseChan chan *entiti
 		Log:             log,
 		responseChannel: clientResponseChan,
 		serviceChannel:  make(chan *entities.WebSocketAnswer),
-		aserv:           *assistant.NewAssistantService(log, validator.New(), clientResponseChan, stor, storwr, conf),
+		aserv:           *assistant.NewAssistantService(log, validator.New(), clientResponseChan, stor, storwr, conf, prompting.NewPromptService(log, stor, storwr)),
 	}
 }
 

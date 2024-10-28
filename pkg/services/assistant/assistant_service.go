@@ -3,6 +3,7 @@ package assistant
 import (
 	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
+	"Llamacommunicator/pkg/services/prompting"
 	"Llamacommunicator/pkg/storage"
 	"bufio"
 	"bytes"
@@ -24,9 +25,10 @@ type Service struct {
 	Storage               *storage.StorageReader
 	StorageWriter         *storage.StorageWriter
 	Conf                  *config.Specification
+	Pr                    *prompting.PromptService
 }
 
-func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serChan chan *entities.WebSocketAnswer, storage *storage.StorageReader, storagewriter *storage.StorageWriter, conf *config.Specification) *Service {
+func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serChan chan *entities.WebSocketAnswer, storage *storage.StorageReader, storagewriter *storage.StorageWriter, conf *config.Specification, pr *prompting.PromptService) *Service {
 	return &Service{
 		Log:                   log,
 		Val:                   val,
@@ -34,6 +36,7 @@ func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serCha
 		Storage:               storage,
 		StorageWriter:         storagewriter,
 		Conf:                  conf,
+		Pr:                    pr,
 	}
 
 }
@@ -41,16 +44,16 @@ func NewAssistantService(log *zap.SugaredLogger, val *validator.Validate, serCha
 var method = "POST"
 
 func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer, temp float32) entities.LlmActionResponse {
-	prompt, err := srv.assemblePrompt(msg)
+	prompt, err := srv.Pr.AssemblePrompt(msg)
 	print("srv.Conf.LlmSmall ", srv.Conf.LlmSmall)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
 	var payload_struct entities.LlmRequest
 	if msg.MessageType == "innerThoughtEvent" {
-		payload_struct = srv.AssemblePayload(200, false, 0.7, prompt, srv.assembleActionGrammarEnum(msg), 10)
+		payload_struct = srv.AssemblePayload(200, false, 0.8, prompt, srv.assembleActionGrammarEnum(msg), 10)
 	} else {
-		payload_struct = srv.AssemblePayload(200, false, 0.7, prompt, srv.assembleActionGrammarEnum(msg), 5)
+		payload_struct = srv.AssemblePayload(200, false, 0.8, prompt, srv.assembleActionGrammarEnum(msg), 5)
 	}
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
@@ -95,7 +98,7 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 }
 
 func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMessage, serviceChannel chan *entities.WebSocketAnswer) entities.LlmActionResponse {
-	prompt, err := srv.assembleEnvEventPrompt(msg)
+	prompt, err := srv.Pr.AssembleEnvEventPrompt(msg)
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
@@ -149,7 +152,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 		url = srv.Conf.LlmBig
 	}
 	method := "POST"
-	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "museumAssistant")
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, "museumAssistant")
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
@@ -168,9 +171,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 			"<|END_OF_TURN_TOKEN|>",
 			"<|end_of_turn|>",
 			"<|endoftext|>",
-			"ASSISTANT",
-			"NARRATOR",
-			"VISITOR"},
+		},
 		RepeatLastN:      0,
 		RepeatPenalty:    1.18,
 		TopK:             40,
@@ -283,7 +284,7 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	} else {
 		url = srv.Conf.LlmBig
 	}
-	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
@@ -342,7 +343,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 	} else {
 		url = srv.Conf.LlmSmall
 	}
-	prompt, err := srv.assembleInstructionsPrompt(msg, inst, "analysisMachine")
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, "analysisMachine")
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
@@ -408,9 +409,7 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 			"<|END_OF_TURN_TOKEN|>",
 			"<|end_of_turn|>",
 			"<|endoftext|>",
-			"ASSISTANT",
-			"NARRATOR",
-			"VISITOR"},
+		},
 		RepeatLastN:      0,
 		RepeatPenalty:    1.18,
 		TopK:             40,
@@ -431,132 +430,6 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 		APIKey:           "",
 		Prompt:           prompt,
 	}
-}
-
-func (srv *Service) assemblePrompt(msg entities.WebSocketMessage) (string, error) {
-	matArray := []string{"options"}
-	mats, err := srv.Storage.ReadMaterials(matArray, msg.AssistantContext, context.Background())
-	if err != nil {
-		srv.Log.Errorln()
-	}
-	prompt := ""
-	baseprompt, err := srv.Storage.ReadBasePrompt("languageInterpreter", context.Background())
-	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
-	//location, err := srv.Storage.ReadLocation(msg.AssistantContext.Location, context.Background())
-	if err != nil {
-		srv.Log.Errorln("Error reading Baseprompt from DB")
-	} //Find Setting
-	prompt += "<s>[INST] <<SYS>> \n" + baseprompt.Prompt + "<</SYS>>"
-	//prompt += "You are positioned at the " + location.LocationName + ": " + location.Description //Location
-	prompt += srv.getActivityState(msg)
-	if msg.MessageType != "innerThoughtEvent" { //Get state from msg
-		prompt += "You will be given a list : \n"
-	}
-	for _, avac := range mats {
-		prompt += `{"action: ` + avac.Name + `", "description: ` + avac.Description + `}` + "\n"
-	}
-	prompt += "Here is what happened recently: \n"
-	prompt += player.History
-
-	if msg.MessageType != "innerThoughtEvent" {
-		prompt += "\n\n\n\nVISITOR: '" + msg.Speech + "'"
-	}
-	prompt += "Output the name of the action that fits best in this situation."
-	prompt += "[/INST]\n "
-
-	prompt += "\nASSISTANT:"
-
-	//srv.Storage.ReadActionOptionEntity()
-	//GetBasePrompt
-	//GetLocation
-	//Add UserContext
-	//SearchAvailableActions
-	//Combine
-	srv.Log.Infoln("Generated Prompt: ", prompt)
-	return prompt, nil
-}
-
-func (srv *Service) assembleEnvEventPrompt(msg entities.WebSocketMessage) (string, error) {
-	prompt := ""
-	baseprompt, err := srv.Storage.ReadBasePrompt(msg.AssistantContext.SelectedBasePrompt, context.Background())
-	if err != nil {
-		srv.Log.Errorln("Error reading Baseprompt from DB")
-	}
-
-	assistantLocation, err := srv.Storage.ReadLocation(msg.AssistantContext.Location, context.Background())
-	prompt += baseprompt.Prompt + "\n"
-	prompt += "You are currently located at the " + assistantLocation.LocationName + ". \n"
-	prompt += assistantLocation.Description + "\n"
-	prompt += srv.getActivityState(msg) + "\n"
-	prompt += "Something happened: \n"
-	prompt += msg.Speech + "\n"
-	prompt += "In your role as the assistant who is responsible for the museum, what should you do?" + "\n"
-	for _, opt := range msg.AssistantContext.AvailableActions {
-		action, err := srv.Storage.ReadActionOptionEntity(opt, context.Background())
-		if err != nil {
-			return prompt, err
-		}
-		prompt += `{"` + action.ActionName + `": "` + action.Description + `}` + "\n"
-	}
-	return prompt, nil
-}
-
-func (srv *Service) assembleInstructionsPrompt(msg entities.WebSocketMessage, inst entities.Instructions, basepromptstr string) (string, error) {
-	prompt := ""
-	baseprompt, err := srv.Storage.ReadBasePrompt(basepromptstr, context.Background())
-	if err != nil {
-		srv.Log.Errorln("Error reading Baseprompt from DB")
-	}
-	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
-	if err != nil {
-		srv.Log.Errorln(err)
-	}
-	prompt += "<s>[INST] <<SYS>> \n" + baseprompt.Prompt + "<</SYS>>" + "\n"
-	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
-	if err != nil {
-		srv.Log.Errorln(err)
-	}
-
-	switch inst.Type {
-	case "playerSpeechAnalysis": // Will be sent to small LLM
-		prompt += inst.StageInstructions + "\n"
-		prompt += "INPUT: " + msg.Speech + "\n + [/INST]"
-		break
-	case "speech": // Will be sent to big LLM
-		prompt += "Here is what happened so far:"
-		prompt += player.History + "\n"
-		prompt += "Currently" + " "
-		prompt += inst.StageInstructions + "\n"
-		for _, avac := range material {
-			prompt += `{"name": "` + avac.Name + `",` + `"description":"` + avac.Description + `"}` + "\n"
-		}
-		prompt += "[/INST]"
-		break
-	case "actionquery":
-		prompt += inst.StageInstructions + "\n"
-		prompt += "INPUT: " + msg.Speech + "\n"
-		prompt += "MATERIAL: \n"
-		var focus entities.Material
-		hasFocus := false
-		counter := 1
-		for _, mat := range material {
-			if mat.Type != "focus" {
-				prompt += `{"name": "` + mat.Name + `",` + `"description":"` + mat.Description + `"}` + "\n"
-				counter++
-			} else {
-				focus = mat
-				hasFocus = true
-			}
-		}
-		if hasFocus { //Save the focus for last, for relevancy
-			prompt += "Both assistant and visitor are intently looking at: \n"
-			prompt += `{"name": "` + focus.Name + `",` + `"description":"` + focus.Description + `"}`
-		}
-		prompt += "[/INST]"
-	}
-	// prompt += location? actionselection, speech, actionquery, speechAnalysis
-	// prompt += playerState, etc.?
-	return prompt, nil
 }
 
 // This function transfers the available actions into an Enum, to make sure the lil' stupid Llama makes no spelling mistakes. :)
@@ -613,29 +486,4 @@ root ::= "{" space result-kv "}" space
 space ::= | " " | "\n" [ \t]{0,20}
 string ::= "\"" char* "\"" space`
 	return grammar
-}
-
-func (srv *Service) getActivityState(msg entities.WebSocketMessage) string {
-	text := ""
-	switch msg.AssistantContext.WalkingState {
-	case "idle":
-		text += "You currently stand idle. "
-	case "patrolling":
-		text += "You are currently patrolling the area, searching for things out of place. "
-	case "followPlayer":
-		text += "You are currently following a visitor around."
-	case "moving":
-		text += "You are currently moving towards your destination."
-	}
-	if msg.AssistantContext.PlayerVisible {
-		text += "A Visitor is in your field of vision. "
-	}
-	if msg.PlayerContext.InConversation {
-		text += "You are currently in conversation with a visitor."
-	}
-	if msg.MessageType == "innerThoughtEvent" {
-		text += "You had nothing to do for a while, and you are bored. What do you want to do?"
-	}
-	return text
-
 }

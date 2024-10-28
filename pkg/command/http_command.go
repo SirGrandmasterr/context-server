@@ -48,7 +48,7 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	//assistantService := assistant.NewAssistantService(cmd.Log, validator)
 
 	//router.AssistantRouter(api, assistantService)
-	router.PlayerRouter(api)
+	router.DBRouter(api, storageWriter)
 
 	cmd.BaseCommand.Log.Fatal(app.Listen(":8079"))
 }

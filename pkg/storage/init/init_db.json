@@ -144,7 +144,7 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Choose this action if the visitor requested general information about the museum/gallery or its exhibition pieces.", "type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know out of the provided contextual information", "type": "speech", "material": ["worldContext", "objects"]}
+                {"stage": 2, "stage_instructions": "Explain to the visitor what they want to know out of the provided contextual information", "type": "speech", "material": ["locations", "objects"]}
             ]
         },
         {
@@ -460,7 +460,7 @@
         {"locationName": "upper gallery", "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."}
     ],
     "baseprompts": [
-        {"promptName": "languageInterpreter", "prompt": "You are a language interpreter. You will be given a chronological report of occurrences as well as speech of a visitor, and a list of possible actions. The actions will be provided in a JSON format and each contain two properties: action and description. The model should output the name of the action whose description fits best to the speech of the visitor and its chronological context."},
+        {"promptName": "languageInterpreter", "prompt": "You are a language interpreter. You will be given a chronological report of occurrences as well as speech of a visitor, and a list of possible actions. The actions will be provided in a JSON format and each contain two properties: action and description. You take into consideration the chain of events and given requests, compare them to the provided descriptions and choose the corresponding action accordingly. You output them in a json file like so: {\"action\": \"actionname\"}"},
         {"promptName": "museumAssistant", "prompt": "You work in a museum as an assistant. You have a taciturn, but eloquent personality, preferring to use precise vocabulary but as few words as possible to express yourself. You are willing to follow every wish of visitors, should they talk to you."},  
         {"promptName":"analysisMachine", "prompt": "You are a machine that analyzes natural language. It receives a task and an input, and analyzes the input based on the task provided. It outputs the result in a json, like so: {\"result\":\"result of the task\""}    
     ],
