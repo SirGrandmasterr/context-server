@@ -51,9 +51,9 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 	}
 	var payload_struct entities.LlmRequest
 	if msg.MessageType == "innerThoughtEvent" {
-		payload_struct = srv.AssemblePayload(200, false, 0.8, prompt, srv.assembleActionGrammarEnum(msg), 10)
+		payload_struct = srv.AssemblePayload(200, false, temp, prompt, srv.Pr.AssembleActionGrammarEnum(msg), 10)
 	} else {
-		payload_struct = srv.AssemblePayload(200, false, 0.8, prompt, srv.assembleActionGrammarEnum(msg), 5)
+		payload_struct = srv.AssemblePayload(200, false, temp, prompt, srv.Pr.AssembleActionGrammarEnum(msg), 5)
 	}
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
@@ -64,6 +64,9 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 
 	client := &http.Client{}
 	req, err := http.NewRequest(method, srv.Conf.LlmSmall, bytes.NewBuffer(payload))
+	if msg.MessageType == "innerThoughtEvent" {
+		req, err = http.NewRequest(method, srv.Conf.LlmBig, bytes.NewBuffer(payload))
+	}
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -102,7 +105,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	if err != nil {
 		srv.Log.Panicln(err, "PromptAssembly failed")
 	}
-	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleActionGrammarEnum(msg), 5)
+	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.Pr.AssembleActionGrammarEnum(msg), 10)
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -111,7 +114,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, srv.Conf.LlmSmall, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(method, srv.Conf.LlmBig, bytes.NewBuffer(payload))
 	req.Header.Add("Accept", "text/event-stream")
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
@@ -144,7 +147,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 	return detectedAction
 }
 
-func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities.Instructions) {
+func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities.Instructions, tok entities.ActionToken) {
 	url := ""
 	if inst.LlmSize == "small" {
 		url = srv.Conf.LlmSmall
@@ -157,44 +160,11 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 		srv.Log.Errorln(err)
 	}
 
-	payloadObject := entities.LlmRequest{
-		Stream:      true,
-		NPredict:    500,
-		Temperature: 0.7,
-		Stop: []string{
-			"</s>",
-			"<|end|>",
-			"<|eot_id|>",
-			"<|end_of_text|>",
-			"<|im_end|>",
-			"<|EOT|>",
-			"<|END_OF_TURN_TOKEN|>",
-			"<|end_of_turn|>",
-			"<|endoftext|>",
-		},
-		RepeatLastN:      0,
-		RepeatPenalty:    1.18,
-		TopK:             40,
-		TopP:             0.95,
-		MinP:             0.05,
-		TfsZ:             1,
-		TypicalP:         1,
-		PresencePenalty:  0,
-		FrequencyPenalty: 0,
-		Mirostat:         2,
-		MirostatTau:      5,
-		MirostatEta:      0.1,
-		Grammar:          "",
-		NProbs:           0,
-		MinKeep:          0,
-		ImageData:        []interface{}{},
-		CachePrompt:      true,
-		APIKey:           "",
-		Prompt:           prompt,
-	}
+	var payload_struct = srv.AssemblePayload(500, true, 0.8, prompt, "", 5)
+
 	client := &http.Client{}
 	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(payloadObject)
+	err = json.NewEncoder(&buf).Encode(payload_struct)
 	if err != nil {
 		srv.Log.Infoln("Error marshaling Payload")
 	}
@@ -273,7 +243,61 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 		Type:       "speech",
 		Text:       str,
 		ActionName: "stopSpeak",
+		Token:      tok.ID,
 	}
+
+}
+
+func (srv *Service) StreamAssistantTest(msg entities.WebSocketMessage, inst entities.Instructions, temp float32, miro int) string {
+	url := ""
+	if inst.LlmSize == "small" {
+		url = srv.Conf.LlmSmall
+	} else {
+		url = srv.Conf.LlmBig
+	}
+	method := "POST"
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, "museumAssistant")
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+
+	var payload_struct = srv.AssemblePayload(500, false, temp, prompt, "", miro)
+
+	client := &http.Client{}
+	var buf bytes.Buffer
+	err = json.NewEncoder(&buf).Encode(payload_struct)
+	if err != nil {
+		srv.Log.Infoln("Error marshaling Payload")
+	}
+
+	req, err := http.NewRequest(method, url, &buf)
+
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	req.Header.Add("Content-Type", "application/json")
+	srv.Log.Infoln("Doing Request")
+	res, err := client.Do(req)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return ""
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Infoln(err)
+		return ""
+	}
+	var serverResponse entities.AssistantResponse
+
+	err = json.Unmarshal(body, &serverResponse)
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+
+	return serverResponse.Content
 
 }
 
@@ -288,7 +312,7 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
-	grammar := srv.assembleGrammarString()
+	grammar := srv.Pr.AssembleGrammarString()
 	payloadobj := srv.AssemblePayload(250, false, 0.5, prompt, grammar, 5)
 	payload, err := json.Marshal(payloadobj)
 	if err != nil {
@@ -347,7 +371,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
-	var payload_struct = srv.AssemblePayload(200, false, 1.2, prompt, srv.assembleMaterialChoiceGrammar(msg, inst), 5)
+	var payload_struct = srv.AssemblePayload(200, false, 0.8, prompt, srv.Pr.AssembleMaterialChoiceGrammar(msg, inst), 5)
 	payload, err := json.Marshal(payload_struct)
 	if err != nil {
 		srv.Log.Errorln(err)
@@ -421,7 +445,7 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 		FrequencyPenalty: 0,
 		Mirostat:         2,
 		MirostatTau:      mirostat,
-		MirostatEta:      0.1,
+		MirostatEta:      0.5,
 		Grammar:          grammar,
 		NProbs:           0,
 		MinKeep:          0,
@@ -430,60 +454,4 @@ func (srv *Service) AssemblePayload(npredict int, stream bool, temperature float
 		APIKey:           "",
 		Prompt:           prompt,
 	}
-}
-
-// This function transfers the available actions into an Enum, to make sure the lil' stupid Llama makes no spelling mistakes. :)
-func (srv *Service) assembleActionGrammarEnum(msg entities.WebSocketMessage) string {
-	len := len(msg.AssistantContext.AvailableActions)
-	result := "("
-	for i, st := range msg.AssistantContext.AvailableActions {
-		result += `"\"`
-		result += st
-		result += `\""`
-		if i != len-1 {
-			result += ` | `
-		}
-	}
-	result += ")"
-
-	grammar := `action ::= ` + result + ` space
-action-kv ::= "\"action\"" space ":" space action
-root ::= "{" space action-kv "}" space
-space ::= | " " | "\n" [ \t]{0,20}`
-	print("grammar: ", grammar)
-	return grammar
-}
-
-func (srv *Service) assembleMaterialChoiceGrammar(msg entities.WebSocketMessage, inst entities.Instructions) string {
-	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
-	if err != nil {
-		srv.Log.Errorln(err)
-	}
-	len := len(material)
-	result := "("
-	for i, st := range material {
-		result += `"\"`
-		result += st.Name
-		result += `\""`
-		if i != len-1 {
-			result += ` | `
-		}
-	}
-	result += ")"
-	grammar := `result ::= ` + result + ` space
-result-kv ::= "\"result\"" space ":" space result
-root ::= "{" space result-kv "}" space
-space ::= | " " | "\n" [ \t]{0,20}`
-	srv.Log.Infoln("grammar: ", grammar)
-	return grammar
-}
-
-func (srv *Service) assembleGrammarString() string {
-	//makes the llm return something like "{"query": "somestring"}"
-	grammar := `char ::= [^"\\\x7F\x00-\x1F] | [\\] (["\\bfnrt] | "u" [0-9a-fA-F]{4})
-result-kv ::= "\"result\"" space ":" space string
-root ::= "{" space result-kv "}" space
-space ::= | " " | "\n" [ \t]{0,20}
-string ::= "\"" char* "\"" space`
-	return grammar
 }

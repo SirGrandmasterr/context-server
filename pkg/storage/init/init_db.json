@@ -2,7 +2,7 @@
     "actions": [
         {
             "actionname": "walkToVisitor",
-            "description": "If the visitor requests the assistant to come over, move over, or any other paraphrasing of words that imply that the assistant is supposed to walk to the visitor, this has to be chosen.",
+            "description": "If the visitor requests the any other paraphrasing of words that imply that the assistant is supposed to walk to the visitor, this has to be chosen.",
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the visitor.", "type": "actionselection" }
@@ -10,11 +10,11 @@
         },
         {
             "actionname": "walkToObject",
-            "description": "If the visitor requests the assistant to move, walk or similar to a specific picture, artwork, sculpture, area or location that is not the visitor himself, this has to be chosen. ",
+            "description": "The visitor requests the assistant to go to a location or an artwork.",
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Position yourself next to the object in question.","type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Analyze the input to deduce, which of the provided material descriptions fit the request best. Output the corresponding   ","type": "actionquery", "material": ["locations", "objects"], "llmSize": "big"}
+                {"stage": 2, "stage_instructions": "Analyze the input to deduce, which of the provided material descriptions fit the request best. Output the corresponding  material in JSON format, like so: {\"result\": \"name of material\"} ","type": "actionquery", "material": ["locations", "objects"], "llmSize": "big"}
             ]
         },
         {
@@ -66,7 +66,7 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Move to the approximate location of the event and look for things that seem unusual.", "type": "actionselection", "material": [] },
-                {"stage": 2, "stage_instructions": "Read through what happened so far and find the most recent event that asks could warrant an investigation in the role of an employee of the gallery. Choose the location out of the offered locations where the incident happened.", "type": "actionquery" ,"material": ["locations"], "llmSize": "big"}
+                {"stage": 2, "stage_instructions": "Read through what happened so far and find the most recent event that could warrant an investigation in the role of an employee of the gallery. Choose the location out of the offered locations where the incident happened.", "type": "actionquery" ,"material": ["locations"], "llmSize": "big"}
             ]
         },
         {
@@ -87,17 +87,6 @@
             "stages": 1,
             "instructions": [
                 {"stage": 1, "stage_instructions": "Do nothing.", "type": "actionselection", "material": [] }
-            ]
-        },
-        {
-            "actionname": "leadToLocation",
-            "description": "This action makes you show the visitor the way to a different location.",
-            "stages": 4,
-            "instructions": [
-                {"stage": 1, "stage_instructions": "This action makes you show the visitor the way to a different location.", "type": "actionselection"},
-                {"stage": 2, "stage_instructions": "Analyze the words of the visitor to determine which of these locations you should approach: ", "type": "actionquery"},
-                {"stage": 3, "stage_instructions": "Inform the visitor what location you'll be leading him to.", "type": "speech"},
-                {"stage": 4, "stage_instructions": "Inform the visitor that you have arrived at the location.", "type": "speech", "permissionRequired": true}
             ]
         },
         {
@@ -451,7 +440,14 @@
             "objectlocation": "lower_gallery",
             "description": "A hand, made from polished bronce. It looks longing, angry and frightful at the same time.",
             "artist": "Kristina Connolly"
+        },{
+            "objectname": "Magical Evaluation",
+            "objecttype": "painting",
+            "objectlocation": "lower_gallery",
+            "description": "The painting depicts a dramatic seascape with a sailboat caught in a turbulent storm. The sky is dominated by dark, swirling clouds that create a sense of impending danger. The waves are high and choppy, crashing against the boat and threatening to capsize it. The sailors on the boat are hunched over, bracing themselves against the wind and the waves.The painting is rendered in a realistic style, with careful attention paid to the details of the boat, the sails, and the water. The use of light and shadow creates a sense of depth and atmosphere.There is a small dinosaur in the lower right corner of the painting. Potential Artistic Influences:The painting's style and subject matter suggest a number of potential artistic influences, including:    Romantic landscape painting: The dramatic seascape and the emphasis on the power of nature are characteristic of Romantic landscape painting, which emerged in the late 18th and early 19th centuries.    Marine art: The painting's focus on the sea and the boats is reminiscent of marine art, which has been popular for centuries.    Impressionism: The use of light and color to create a sense of atmosphere is reminiscent of Impressionism, a style of painting that emerged in the late 19th century.Cultural Influences:The painting's subject matter may also be influenced by cultural ideas about the sea and its dangers. The sea has long been seen as a symbol of both freedom and danger, and the painting captures this dualism.Overall Impression:\"Magical Evaluation\" is a powerful and evocative painting that captures the drama and danger of the sea. The painting's realistic style and attention to detail create a sense of immediacy and realism. The use of light and shadow creates a sense of atmosphere and drama. The painting's subject matter is also significant, as it speaks to the human fascination with the sea and its dangers.Additional Considerations:    The title \"Magical Evaluation\" is somewhat incongruous with the subject matter of the painting. It is possible that the title is meant to be ironic, or that it is simply a placeholder.The painting is a digital artwork, as it was created using midjourney by Phillip Vogler. This raises questions about the nature of art and the role of technology in the creative process.Conclusion:\"Magical Evaluation\" is a visually stunning and thought-provoking painting that offers a glimpse into the power and danger of the sea. The painting's realistic style, attention to detail, and use of light and shadow create a sense of immediacy and drama. The painting's subject matter is also significant, as it speaks to the human fascination with the sea and its dangers.",
+            "artist": "Midjourney"
         }
+
         
 
     ],

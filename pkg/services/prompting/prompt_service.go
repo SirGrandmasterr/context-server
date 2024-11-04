@@ -51,16 +51,16 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	prompt += baseprompt.Prompt
 	//prompt += "You are positioned at the " + location.LocationName + ": " + location.Description //Location
 	prompt += srv.getActivityState(msg)
-	if msg.MessageType != "innerThoughtEvent" { //Get state from msg
-		prompt += "You are provided a "
-	}
+
+	prompt += "You are provided a list of actions in form of json files. Each json contains the name of an action and its corresponding description."
+
 	prompt += "[\n"
 	for _, avac := range mats {
 		prompt += `{"action: ` + avac.Name + `", "description: ` + avac.Description + `}` + ",\n"
 	}
 	prompt = strings.TrimRight(prompt, ",")
 	prompt += "] \n"
-	prompt += "The following list of strings denotes the chronological chain of events leading up to this point. Take it into consideration."
+	prompt += "The following list of strings denotes the chronological chain of events, also called player history, leading up to this point. Take it into consideration."
 	prompt += "[\n"
 	prompt += player.History
 	prompt += "] \n"
@@ -72,6 +72,7 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	} else {
 		prompt += "Choose your next action from the set of provided actions. Let the provided chain of events influence your decision."
 		prompt += "<|eot_id|>"
+		prompt += "<|start_header_id|>user<|end_header_id|>" + "Choose your next action, and give priority to urgent tasks." + "<|eot_id|>"
 	}
 	prompt += "<|start_header_id|>assistant<|end_header_id|>"
 	srv.Log.Infoln("Prompt: ", prompt)
@@ -136,25 +137,35 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "<|start_header_id|>user<|end_header_id|>" + msg.Speech + "<|eot_id|>"
 		break
 	case "speech": // Will be sent to big LLM
-		prompt += "Here is what happened so far:"
+		prompt += "The following list of strings denotes the chronological chain of events, also called player history, leading up to this point. Take it into consideration."
 		prompt += "[\n"
 		prompt += player.History
 		prompt += "] \n"
-		prompt += inst.StageInstructions + "\n"
-		if len(inst.Material) > 0 {
-			prompt += "You are presented with a selection of materials that you can talk about. It is a list of json containing name and description of each material."
-
-			prompt += "[\n"
-			for _, avac := range material {
-				prompt += `{"action: ` + avac.Name + `", "description: ` + avac.Description + `}` + ",\n"
+		prompt += "[\n"
+		var focus entities.Material
+		hasFocus := false
+		counter := 1
+		for _, mat := range material {
+			if mat.Type != "focus" {
+				prompt += `{"name": "` + mat.Name + `",` + `"description":"` + mat.Description + `"}` + "\n"
+				counter++
+			} else {
+				focus = mat
+				hasFocus = true
 			}
-			prompt = strings.TrimRight(prompt, ",")
-			prompt += "] \n"
+		}
+		prompt = strings.TrimRight(prompt, ",")
+		prompt += "] \n"
+		if hasFocus { //Save the focus for last, for relevancy
+			prompt += "Currently the focus lies on this material:"
+			prompt += `{"name": "` + focus.Name + `",` + `"description":"` + focus.Description + `"}`
 		}
 		prompt += "<|eot_id|>"
+		prompt += "<|start_header_id|>user<|end_header_id|>" + inst.StageInstructions + "<|eot_id|>"
+
 		break
 	case "actionquery":
-		prompt += inst.StageInstructions + "<|eot_id|>"
+		prompt += inst.StageInstructions + "\n"
 		prompt += "You are presented with a selection of materials. It is a list of json containing name and description of each material."
 		var focus entities.Material
 		hasFocus := false
@@ -175,10 +186,13 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 			prompt += "Currently the focus lies on this material:"
 			prompt += `{"name": "` + focus.Name + `",` + `"description":"` + focus.Description + `"}`
 		}
+		prompt += "<|eot_id|>"
 		prompt += "<|start_header_id|>user<|end_header_id|>" + msg.Speech + "<|eot_id|>"
 	}
 	// prompt += location? actionselection, speech, actionquery, speechAnalysis
 	// prompt += playerState, etc.?
+	prompt += "<|start_header_id|>assistant<|end_header_id|>"
+	srv.Log.Info("Streaming Prompt: ", prompt)
 	return prompt, nil
 }
 
@@ -204,5 +218,59 @@ func (srv *PromptService) getActivityState(msg entities.WebSocketMessage) string
 		text += "You had nothing to do for a while, and you are bored. What do you want to do?"
 	}
 	return text
+}
 
+func (srv *PromptService) AssembleActionGrammarEnum(msg entities.WebSocketMessage) string {
+	len := len(msg.AssistantContext.AvailableActions)
+	result := "("
+	for i, st := range msg.AssistantContext.AvailableActions {
+		result += `"\"`
+		result += st
+		result += `\""`
+		if i != len-1 {
+			result += ` | `
+		}
+	}
+	result += ")"
+
+	grammar := `action ::= ` + result + ` space
+action-kv ::= "\"action\"" space ":" space action
+root ::= "{" space action-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}`
+	print("grammar: ", grammar)
+	return grammar
+}
+
+func (srv *PromptService) AssembleMaterialChoiceGrammar(msg entities.WebSocketMessage, inst entities.Instructions) string {
+	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
+	if err != nil {
+		srv.Log.Errorln(err)
+	}
+	len := len(material)
+	result := "("
+	for i, st := range material {
+		result += `"\"`
+		result += st.Name
+		result += `\""`
+		if i != len-1 {
+			result += ` | `
+		}
+	}
+	result += ")"
+	grammar := `result ::= ` + result + ` space
+result-kv ::= "\"result\"" space ":" space result
+root ::= "{" space result-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}`
+	srv.Log.Infoln("grammar: ", grammar)
+	return grammar
+}
+
+func (srv *PromptService) AssembleGrammarString() string {
+	//makes the llm return something like "{"result": "somestring"}"
+	grammar := `char ::= [^"\\\x7F\x00-\x1F] | [\\] (["\\bfnrt] | "u" [0-9a-fA-F]{4})
+result-kv ::= "\"result\"" space ":" space string
+root ::= "{" space result-kv "}" space
+space ::= | " " | "\n" [ \t]{0,20}
+string ::= "\"" char* "\"" space`
+	return grammar
 }

@@ -3,9 +3,14 @@ package command
 import (
 	"Llamacommunicator/api/handler"
 	"Llamacommunicator/api/router"
+	"Llamacommunicator/pkg/entities"
+	"Llamacommunicator/pkg/services/assistant"
+	"Llamacommunicator/pkg/services/evaluation"
+	"Llamacommunicator/pkg/services/prompting"
 	"Llamacommunicator/pkg/storage"
 	"context"
 
+	"github.com/go-playground/validator/v10"
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -31,7 +36,16 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	app.Use(logger.New())
 	storageWriter := storage.NewStorageWriter(cmd.Log, db)
 	storageReader := storage.NewStorageReader(cmd.Log, db)
-
+	assistantserv := assistant.NewAssistantService(
+		cmd.Log,
+		validator.New(),
+		make(chan *entities.WebSocketAnswer),
+		storageReader,
+		storageWriter,
+		cmd.Config,
+		prompting.NewPromptService(cmd.Log, storageReader, storageWriter),
+	)
+	evalserv := evaluation.NewEvalService(cmd.Log, cmd.Config, assistantserv)
 	//authService := auth.NewAuthService(cmd.Config)
 	app.Post("/login", handler.Login(storageReader))
 	app.Post("/create", handler.CreateUser(storageReader, storageWriter))
@@ -41,7 +55,7 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	}))
 
 	api := app.Group("/api")
-
+	testApi := app.Group("/eval")
 	//validator := validator.New()
 
 	//Services
@@ -49,6 +63,7 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 
 	//router.AssistantRouter(api, assistantService)
 	router.DBRouter(api, storageWriter)
+	router.EvalRouter(testApi, storageWriter, storageReader, evalserv)
 
 	cmd.BaseCommand.Log.Fatal(app.Listen(":8079"))
 }

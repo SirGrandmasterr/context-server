@@ -50,7 +50,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln(err)
 		}
 
-		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 1.2)
+		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 0.8)
 		ap.Log.Infoln("Detected Action", action)
 		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
 		ap.Log.Infoln("Found Action in Database:", action_db)
@@ -277,7 +277,7 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 				return
 			}
 
-			ap.aserv.StreamAssistant(msg, inst)
+			go ap.aserv.StreamAssistant(msg, inst, tok)
 
 			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			break
