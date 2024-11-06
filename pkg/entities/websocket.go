@@ -11,7 +11,7 @@ type WebSocketMessage struct {
 	AssistantContext AssistantContext `json:"assistantContext"`
 	PlayerContext    PlayerContext    `json:"playerContext"`
 	ActionContext    ActionContext    `json:"actionContext"`
-	EventContext     EventContext     `json:"eventContext"`
+	//EventContext     EventContext     `json:"eventContext"`
 }
 
 type WebSocketAnswer struct {
