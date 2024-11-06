@@ -65,10 +65,10 @@ func CreateUser(r *storage.StorageReader, w *storage.StorageWriter) fiber.Handle
 			return c.Send([]byte("Something happened while creating the account."))
 		}
 		player := entities.Player{
-			ID:       primitive.NewObjectID().String(),
-			Username: user,
-			Password: hash,
-			History:  "",
+			ID:           primitive.NewObjectID().String(),
+			Username:     user,
+			Password:     hash,
+			HistoryArray: make([]string, 0),
 		}
 		err = w.SavePlayers(player, context.Background())
 		if err != nil {

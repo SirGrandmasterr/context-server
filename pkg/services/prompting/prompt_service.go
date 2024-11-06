@@ -26,7 +26,7 @@ func NewPromptService(log *zap.SugaredLogger, storage *storage.StorageReader, st
 func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string, error) {
 	//Options are necessary, so material array is forced.
 	matArray := []string{"options"}
-	mats, err := srv.Storage.ReadMaterials(matArray, msg.AssistantContext, context.Background())
+	mats, err := srv.Storage.ReadMaterials(matArray, msg.AssistantContext, msg.PlayerContext, context.Background())
 	if err != nil {
 		srv.Log.Errorln()
 	}
@@ -35,11 +35,10 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	prompt := "<|begin_of_text|>"
 
 	baseprompt, err := srv.Storage.ReadBasePrompt("languageInterpreter", context.Background())
-
-	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
 	if err != nil {
 		srv.Log.Errorln("Error reading BasePrompt from DB")
 	}
+	hist := srv.Storage.ReadPlayerHistory(50, msg.PlayerContext.PlayerUsername)
 
 	location, err := srv.Storage.ReadLocation(msg.AssistantContext.Location, context.Background())
 	if err != nil {
@@ -49,7 +48,7 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	//Declare begin of system prompt
 	prompt += "<|start_header_id|>system<|end_header_id|>"
 	prompt += baseprompt.Prompt
-	//prompt += "You are positioned at the " + location.LocationName + ": " + location.Description //Location
+
 	prompt += srv.getActivityState(msg)
 
 	prompt += "You are provided a list of actions in form of json files. Each json contains the name of an action and its corresponding description."
@@ -62,7 +61,9 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	prompt += "] \n"
 	prompt += "The following list of strings denotes the chronological chain of events, also called player history, leading up to this point. Take it into consideration."
 	prompt += "[\n"
-	prompt += player.History
+	for _, entry := range hist {
+		prompt += "'" + entry + "',"
+	}
 	prompt += "] \n"
 	prompt += "You are positioned at " + location.LocationName + ": " + location.Description + ".\n"
 	if msg.MessageType != "innerThoughtEvent" {
@@ -119,27 +120,25 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	if err != nil {
 		srv.Log.Errorln("Error reading Baseprompt from DB")
 	}
-
-	player, err := srv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
-	if err != nil {
-		srv.Log.Errorln(err)
-	}
+	hist := srv.Storage.ReadPlayerHistory(50, msg.PlayerContext.PlayerUsername)
 	prompt += "<|start_header_id|>system<|end_header_id|>"
 	prompt += baseprompt.Prompt
-	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
+	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, msg.PlayerContext, context.Background())
 	if err != nil {
 		srv.Log.Errorln(err)
 	}
 
 	switch inst.Type {
-	case "playerSpeechAnalysis": // Will be sent to small LLM
+	case "playerSpeechAnalysis":
 		prompt += inst.StageInstructions + "<|eot_id|>"
 		prompt += "<|start_header_id|>user<|end_header_id|>" + msg.Speech + "<|eot_id|>"
 		break
-	case "speech": // Will be sent to big LLM
+	case "speech":
 		prompt += "The following list of strings denotes the chronological chain of events, also called player history, leading up to this point. Take it into consideration."
 		prompt += "[\n"
-		prompt += player.History
+		for _, entry := range hist {
+			prompt += "'" + entry + "',"
+		}
 		prompt += "] \n"
 		prompt += "[\n"
 		var focus entities.Material
@@ -242,7 +241,7 @@ space ::= | " " | "\n" [ \t]{0,20}`
 }
 
 func (srv *PromptService) AssembleMaterialChoiceGrammar(msg entities.WebSocketMessage, inst entities.Instructions) string {
-	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, context.Background())
+	material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, msg.PlayerContext, context.Background())
 	if err != nil {
 		srv.Log.Errorln(err)
 	}

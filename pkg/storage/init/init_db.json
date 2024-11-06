@@ -108,7 +108,7 @@
             ]
         },
         {
-            "actionname": "explainWhatYouCanDo",
+            "actionname": "explainOptions",
             "description": "This action makes the assistant explain to the visitor what he is capable of. Do not choose this option if the visitor is asking about opionions, the gallery, artpieces of any synonym thereof.",
             "stages": 2,
             "instructions": [
@@ -143,6 +143,23 @@
             "instructions":[
                 {"stage": 1, "stage_instructions": "The visitor does not want you to do any of the above task, but only holds a conversation with you. This action lets you answer as you please.", "type": "actionselection"},
                 {"stage": 2, "stage_instructions": "Answer the visitor.", "type": "speech"}
+            ]
+        },
+        {
+            "actionname": "testAction",
+            "description": "This exists purely for testing response times.",
+            "stages": 2,
+            "instructions":[
+                {"stage": 1, "stage_instructions": "Let's pretend that this is some kind of important instruction.", "type": "actionselection"},
+                {"stage": 2, "stage_instructions": "Tell the visitor something about birds.", "type": "speech"}
+            ]
+        },
+        {
+            "actionname": "testAction1",
+            "description": "This exists purely for testing response times.",
+            "stages": 1,
+            "instructions":[
+                {"stage": 1, "stage_instructions": "Let's pretend that this is some kind of important instruction.", "type": "actionselection"}
             ]
         }
 
@@ -465,7 +482,7 @@
             "_id": "66f41e0c7b864b182439c7f6",
             "username": "Sir Grandmasterr",
             "password": "test",
-            "history": ""
+            "historyarray": []
         }
     ]
 }

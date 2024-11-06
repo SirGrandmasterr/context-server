@@ -103,7 +103,7 @@ func (strg *StorageReader) ReadLocation(name string, ctx context.Context) (entit
 	var loc entities.Location
 	err := locationCollection.FindOne(ctx, bson.D{{Key: "location_name", Value: name}}).Decode(&loc)
 	if err != nil {
-		strg.Log.Errorln("Error in ReadPlayer", err)
+		strg.Log.Errorln("Error in ReadLocation", err)
 		return entities.Location{}, err
 	}
 	return loc, nil
@@ -114,13 +114,33 @@ func (strg *StorageReader) ReadActionToken(ctx context.Context, id primitive.Obj
 	var tok entities.ActionToken
 	err := actionTokenCollection.FindOne(ctx, bson.D{{Key: "_id", Value: id}}).Decode(&tok)
 	if err != nil {
-		strg.Log.Errorln("Error in ReadPlayer", err)
+		strg.Log.Errorln("Error in ReadActionToken", err)
 		return entities.ActionToken{}, err
 	}
 	return tok, nil
 }
 
-func (strg *StorageReader) ReadMaterials(mats []string, ac entities.AssistantContext, ctx context.Context) ([]entities.Material, error) {
+func (strg *StorageReader) ReadPlayerHistory(maxlen int, username string) []string {
+	pl, err := strg.ReadPlayer(username, context.Background())
+	if err != nil {
+		strg.Log.Errorln("Error in ReadPlayer during ReadPlayerHistory", err)
+	}
+	sub := 0
+	length := len(pl.HistoryArray)
+	arr := pl.HistoryArray
+	if length < maxlen {
+		strg.Log.Infoln("Player history has less than 50 entries, using all of it.")
+		return arr
+	} else {
+		strg.Log.Infoln("Returning last 50 entries.")
+		sub = maxlen
+		h := arr[len(arr)-sub:]
+		return h
+	}
+
+}
+
+func (strg *StorageReader) ReadMaterials(mats []string, ac entities.AssistantContext, pc entities.PlayerContext, ctx context.Context) ([]entities.Material, error) {
 	m := make(map[string]bool)
 	for _, mat := range mats {
 		m[mat] = true
@@ -165,9 +185,41 @@ func (strg *StorageReader) ReadMaterials(mats []string, ac entities.AssistantCon
 			s = append(
 				s,
 				entities.Material{
-					Type:        "options",
+					Type:        "locations",
 					Name:        avac.LocationName,
 					Description: avac.Description,
+				},
+			)
+		}
+	}
+	if m["assistantAssetsInView"] {
+		for _, asset := range ac.AssetsInView {
+			obj, err := strg.ReadSingleObject(asset, context.Background())
+			if err != nil {
+				strg.Log.Errorln("Error reading single Object for assistantAssetsInView")
+			}
+			s = append(
+				s,
+				entities.Material{
+					Type:        "assistantAssetsInView",
+					Name:        obj.ObjectName,
+					Description: obj.Description,
+				},
+			)
+		}
+	}
+	if m["playerAssetsInView"] {
+		for _, asset := range pc.AssetsInView {
+			obj, err := strg.ReadSingleObject(asset, context.Background())
+			if err != nil {
+				strg.Log.Errorln("Error reading single Object for assistantAssetsInView")
+			}
+			s = append(
+				s,
+				entities.Material{
+					Type:        "playerAssetsInView",
+					Name:        obj.ObjectName,
+					Description: obj.Description,
 				},
 			)
 		}
@@ -181,7 +233,7 @@ func (strg *StorageReader) ReadMaterials(mats []string, ac entities.AssistantCon
 			s = append(
 				s,
 				entities.Material{
-					Type:        "options",
+					Type:        "objects",
 					Name:        avac.ObjectName,
 					Description: avac.Description,
 				},

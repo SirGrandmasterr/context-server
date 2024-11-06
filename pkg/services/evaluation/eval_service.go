@@ -119,7 +119,7 @@ func (srv *EvalService) TestActionSelectionPrecision() string {
 		AssistantContext: ac,
 		PlayerContext:    pc,
 		ActionContext:    entities.ActionContext{},
-		EventContext:     entities.EventContext{},
+		//EventContext:     entities.EventContext{},
 	}
 	ret := ""
 	for _, entry := range arr_actionSelection_music {
@@ -171,7 +171,7 @@ func (srv *EvalService) TestActionSelectionPrecisionFollowPlayer() string {
 		AssistantContext: ac,
 		PlayerContext:    pc,
 		ActionContext:    entities.ActionContext{},
-		EventContext:     entities.EventContext{},
+		//EventContext:     entities.EventContext{},
 	}
 	ret := ""
 	for _, entry := range arr_actionSelection_followPlayer {
@@ -223,7 +223,7 @@ func (srv *EvalService) TestActionSelectionPrecisionFollowPlayerNoWalk() string 
 		AssistantContext: ac,
 		PlayerContext:    pc,
 		ActionContext:    entities.ActionContext{},
-		EventContext:     entities.EventContext{},
+		//EventContext:     entities.EventContext{},
 	}
 	ret := ""
 	for _, entry := range arr_actionSelection_followPlayer {
@@ -274,7 +274,7 @@ func (srv *EvalService) CreateArtInformationNeedleHaystackPrompt(r *storage.Stor
 		AssistantContext: ac,
 		PlayerContext:    pc,
 		ActionContext:    entities.ActionContext{},
-		EventContext:     entities.EventContext{},
+		//EventContext:     entities.EventContext{},
 	}
 	ret := []string{}
 	for i := 0; i < 10; i++ {

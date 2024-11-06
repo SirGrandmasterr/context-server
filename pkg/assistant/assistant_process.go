@@ -44,8 +44,12 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
 		ap.Log.Infoln("Updating Player History")
-		player.History = player.History + "VISITOR: " + msg.Speech + "\n"
-		err = ap.aserv.StorageWriter.UpdatePlayerHistory(player.Username, player.History)
+		//player.History = player.History + "VISITOR: " + msg.Speech + "\n"
+		/*err = ap.aserv.StorageWriter.UpdatePlayerHistory(player.Username, player.History)
+		if err != nil {
+			ap.Log.Errorln(err)
+		}*/
+		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, "VISITOR: "+msg.Speech+"\n")
 		if err != nil {
 			ap.Log.Errorln(err)
 		}
@@ -80,8 +84,12 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 		if err != nil {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
-		player.History = player.History + msg.Speech + "\n"
+		/*player.History = player.History + msg.Speech + "\n"
 		err = ap.aserv.StorageWriter.UpdatePlayerHistory(player.Username, player.History)
+		if err != nil {
+			ap.Log.Errorln(err)
+		}*/
+		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, msg.Speech+"\n")
 		if err != nil {
 			ap.Log.Errorln(err)
 		}
@@ -311,28 +319,3 @@ func (ap *AssistantProcess) updateToken(currentStage int, tok entities.ActionTok
 	}
 	return nil
 }
-
-//ap.Log.Infoln(action.ActionName)
-
-//
-
-/*for {
-	msg := <-ap.serviceChannel
-	if msg.Type == "partial" {
-
-	}
-}*/
-
-//ap.aserv.StreamAssistant(msg)
-
-/*for i := range 10 {
-	ap.Log.Infoln("Awake.", i)
-	testmsg := entities.WebSocketAnswer{
-		Type: "speech",
-		Text: "A very particular piece of text",
-		//Action:     false,
-	}
-
-	ap.responseChannel <- &testmsg
-	ap.Log.Infoln("Sent a msg.")
-}*/
