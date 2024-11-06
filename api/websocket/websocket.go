@@ -60,6 +60,10 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 	}
 }
 
+func (s *WebSocketServer) KillWebSocket(conn *websocket.Conn) {
+	conn.Close()
+}
+
 func (s *WebSocketServer) LoopForClientResponseChannel(conn *websocket.Conn, ch chan *entities.WebSocketAnswer) {
 	for {
 		msg := <-ch

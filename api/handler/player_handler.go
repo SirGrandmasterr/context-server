@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"Llamacommunicator/pkg/config"
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/storage"
 	"context"
@@ -12,7 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(r *storage.StorageReader) fiber.Handler {
+func Login(r *storage.StorageReader, conf *config.Specification) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		user := c.FormValue("user")
 		pass := c.FormValue("pass")
@@ -39,7 +40,7 @@ func Login(r *storage.StorageReader) fiber.Handler {
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 		// Generate encoded token and send it as response.
-		t, err := token.SignedString([]byte("secret"))
+		t, err := token.SignedString([]byte(conf.Secret))
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}

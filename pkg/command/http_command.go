@@ -47,11 +47,11 @@ func (cmd *HttpCommand) Run(clictx *cli.Context) {
 	)
 	evalserv := evaluation.NewEvalService(cmd.Log, cmd.Config, assistantserv)
 	//authService := auth.NewAuthService(cmd.Config)
-	app.Post("/login", handler.Login(storageReader))
+	app.Post("/login", handler.Login(storageReader, cmd.Config))
 	app.Post("/create", handler.CreateUser(storageReader, storageWriter))
 
 	app.Use(jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{Key: []byte("secret")},
+		SigningKey: jwtware.SigningKey{Key: []byte(cmd.Config.Secret)},
 	}))
 
 	api := app.Group("/api")
