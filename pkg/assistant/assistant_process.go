@@ -7,6 +7,7 @@ import (
 	"Llamacommunicator/pkg/services/prompting"
 	"Llamacommunicator/pkg/storage"
 	"context"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/contrib/websocket"
@@ -300,7 +301,7 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 func (ap *AssistantProcess) CheckDeleteToken(numStages int, tok entities.ActionToken) (bool, error) {
 	if tok.CurrentStage == numStages {
 		//Action completed.
-		ap.Log.Infoln("Action " + tok.Name + " completed at stage " + string(tok.CurrentStage))
+		ap.Log.Infoln("Action " + tok.Name + " completed at stage " + fmt.Sprint(tok.CurrentStage))
 		err := ap.aserv.StorageWriter.DeleteActionToken(tok.ID, context.Background())
 		if err != nil {
 			ap.Log.Errorln(err)
