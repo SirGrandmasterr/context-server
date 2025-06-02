@@ -124,7 +124,7 @@ func (srv *EvalService) TestActionSelectionPrecision() string {
 	ret := ""
 	for _, entry := range arr_actionSelection_music {
 		msg.Speech = entry
-		resp := srv.AssistantService.DetectAction(context.Background(), msg, srv.AssistantService.ClientResponseChannel, 0.8)
+		resp := srv.AssistantService.DetectAction(context.Background(), msg, 0.8)
 		ret += "" + msg.Speech + " & " + resp.ActionName + " & " + "true" + " \\\\ \n"
 		ret += "\\hline"
 	}
@@ -176,7 +176,7 @@ func (srv *EvalService) TestActionSelectionPrecisionFollowPlayer() string {
 	ret := ""
 	for _, entry := range arr_actionSelection_followPlayer {
 		msg.Speech = entry
-		resp := srv.AssistantService.DetectAction(context.Background(), msg, srv.AssistantService.ClientResponseChannel, 0.8)
+		resp := srv.AssistantService.DetectAction(context.Background(), msg, 0.8)
 		ret += "" + msg.Speech + " & " + resp.ActionName + " & " + "true" + " \\\\ \n"
 		ret += "\\hline"
 	}
@@ -228,7 +228,7 @@ func (srv *EvalService) TestActionSelectionPrecisionFollowPlayerNoWalk() string 
 	ret := ""
 	for _, entry := range arr_actionSelection_followPlayer {
 		msg.Speech = entry
-		resp := srv.AssistantService.DetectAction(context.Background(), msg, srv.AssistantService.ClientResponseChannel, 0.8)
+		resp := srv.AssistantService.DetectAction(context.Background(), msg, 0.8)
 		ret += "" + msg.Speech + " & " + resp.ActionName + " & " + "true" + " \\\\ \n"
 		ret += "\\hline"
 	}
