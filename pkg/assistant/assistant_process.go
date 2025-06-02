@@ -45,11 +45,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
 		ap.Log.Infoln("Updating Player History")
-		//player.History = player.History + "VISITOR: " + msg.Speech + "\n"
-		/*err = ap.aserv.StorageWriter.UpdatePlayerHistory(player.Username, player.History)
-		if err != nil {
-			ap.Log.Errorln(err)
-		}*/
+
 		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, "VISITOR: "+msg.Speech+"\n")
 		if err != nil {
 			ap.Log.Errorln(err)
@@ -79,6 +75,17 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 
 		//Needed to validate if all instructions are done
 		ap.InstructionsLoop(action_db, tok, msg, false)
+	case "directSpeechRequest":
+		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
+		if err != nil {
+			ap.Log.Errorln("Error retrieving player", err)
+		}
+		ap.Log.Infoln("Updating Player History")
+
+		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, "VISITOR: "+msg.Speech+"\n")
+		if err != nil {
+			ap.Log.Errorln(err)
+		}
 
 	case "playerHistoryUpdate":
 		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
