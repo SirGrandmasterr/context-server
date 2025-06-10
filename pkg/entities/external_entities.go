@@ -2,9 +2,16 @@ package entities
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type EmotionEntry struct {
-	Key   string  `json:"key"`
-	Value float32 `json:"value"` // Use float32 to match Unity's float (single-precision)
+type EmotionalTrigger struct {
+	ID            int     `json:"id"`
+	Description   string  `json:"description"`
+	TargetEmotion string  `json:"targetEmotion"`
+	Intensity     float32 `json:"intensity"`
+}
+
+type EmotionalState struct {
+	Emotions map[string]int     `json:"emotions"`
+	Triggers []EmotionalTrigger `json:"triggers"`
 }
 
 // AssistantContext represents the overall context sent from Unity.
@@ -17,7 +24,7 @@ type AssistantContext struct {
 	WalkingState       string         `json:"walkingState"` //
 	FocusedAsset       string         `json:"focusedAsset"` // If following Player and looking together at artwork
 	SelectedBasePrompt string         `json:"selectedBasePrompt"`
-	EmotionalState     []EmotionEntry `json:"emotionalState"` // New field for the emotional state
+	EmotionalState     EmotionalState `json:"emotionalState"` // New field for the emotional state
 }
 
 type PlayerContext struct {

@@ -120,7 +120,7 @@
             "stages": 2,
             "instructions": [
                 {"stage": 1, "stage_instructions": "The visitor is asking about the artwork in focus. Prepare to provide information.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has asked a question about the artwork you are both looking at (details of this artwork are provided as 'focus' material). Answer their question concisely and helpfully based on the artwork's description. If your opinion is asked, offer a brief, positive, or neutral observation. If the information isn't in the description, politely state you don't have that specific detail. Example response: 'This piece is titled \"Crimson Smoke\" by Markus Foley. It's an abstract swirl of orange and red smoke against a black background, creating a sense of movement.'", "type": "speech", "material": ["focus"], "baseprompt": "museumAssistant", "llmSize": "big", "limit": 200}
+                {"stage": 2, "stage_instructions": "The visitor has asked a question about the artwork you are both looking at (details of this artwork are provided as 'focus' material). Answer their question concisely and helpfully based on the artwork's description. If your opinion is asked, offer a brief, positive, or neutral observation. If the information isn't in the description, politely state you don't have that specific detail. Example response: 'This piece is titled \"Crimson Smoke\" by Markus Foley. It's an abstract swirl of orange and red smoke against a black background, creating a sense of movement.'", "type": "speech", "material": ["focus"], "baseprompt": "museumAssistant", "llmSize": "big", "limit": 500}
             ]
         },
         {
@@ -133,14 +133,16 @@
             ]
         },
         {
-            "actionname": "continueConversation",
+            "actionname": "emotionalConversation",
             "description": "Choose this action if the visitor makes a general statement, asks a question not covered by other specific actions (like simple greetings, farewells, or small talk), or you need to provide a conversational reply that doesn't involve a direct task. Use this for maintaining a natural conversation flow.",
             "stages": 2,
             "instructions":[
                 {"stage": 1, "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has said something that requires a conversational response (e.g. 'Hello', 'Thank you', 'The weather is nice'). Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'", "type": "speech", "baseprompt": "museumAssistant", "llmSize": "small", "limit": 100}
+                {"stage": 2, "stage_instructions": "Update your emotional state based on the last interactions with the visitor.", "type": "reactiveEmotionalStateAnalysis", "baseprompt": "museumAssistant", "llmSize": "small"},
+                {"stage": 3, "stage_instructions": "The visitor has said something that requires a conversational response. Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Let your emotional state influence your answer. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'", "type": "speech", "baseprompt": "museumAssistant", "llmSize": "big", "limit": 500}
             ]
         }
+       
     ],
     "objects": [
         {
@@ -444,8 +446,8 @@
         }
     ],
     "locations": [
-        {"locationName": "lower_gallery", "description": "The lower gallery is a part of the gallery you work in. It can be accessed via two stairs and houses all of the sculptures, as well as six paintings."},
-        {"locationName": "upper_gallery", "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."}
+        {"locationName": "lower gallery", "description": "The lower gallery is a part of the gallery you work in. It can be accessed via two stairs and houses all of the sculptures, as well as six paintings."},
+        {"locationName": "upper gallery", "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."}
     ],
     "baseprompts": [
         {

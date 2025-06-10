@@ -4,6 +4,7 @@ import (
 	"Llamacommunicator/pkg/entities"
 	"Llamacommunicator/pkg/storage"
 	"context"
+	"encoding/json"
 	"strings"
 
 	"go.uber.org/zap"
@@ -226,6 +227,31 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
 		prompt += "Visitor's statement: \"" + msg.Speech + "\"\nWhich item do you select based on your task?\n"
 		prompt += "<|eot_id|>\n"
+	case "reactiveEmotionalStateAnalysis":
+		currentEmotionsJSON, _ := json.Marshal(msg.AssistantContext.EmotionalState)
+		currentEmotionsJSONString := string(currentEmotionsJSON)
+		// Additions to the system prompt for emotional analysis:
+		prompt += "ADDITIONAL INSTRUCTIONS FOR EMOTIONAL ANALYSIS:\n"
+		prompt += "Your current internal emotional state is represented by the following JSON object: " + currentEmotionsJSONString + "\n"
+		prompt += "The emotion values range from 0 (emotion not present) to 100 (emotion very intense).\n"
+		prompt += "Your task is to analyze the RECENT CONVERSATION HISTORY and the VISITOR'S LATEST STATEMENT (below) and update your emotional state accordingly.\n"
+		prompt += "Consider how specific events or phrases might influence your emotions. For example:\n"
+		prompt += "  - A sincere apology for a mistake might significantly lower 'anger' and slightly raise 'neutral' or 'relief'.\n"
+		prompt += "  - A direct insult could sharply increase 'anger' or 'sadness'.\n"
+		prompt += "  - A compliment or positive feedback might increase 'joy'.\n"
+		prompt += "  - Unexpected news or events could increase 'surprise'.\n"
+		prompt += "After your analysis, you MUST output your *new, updated* emotional state.\n"
+		prompt += "The output MUST be a JSON object containing all the original emotion keys with their new values. Respond *only* with this JSON object.\n"
+		// Example of the expected output format (though GBNF will enforce this):
+		prompt += "Example Output Format: `{\"anger\": 5, \"joy\": 60, \"sadness\": 0, ...etc.}`\n\n"
+		prompt += "<|eot_id|>\n" // End of system message
+
+		// User message for this instruction type
+		prompt += "<|start_header_id|>user<|end_header_id|>\n"
+		prompt += "Visitor's latest statement: \"" + msg.Speech + "\"\n"
+		prompt += "Given your instructions, the conversation history, your current emotional state, and my latest statement, what is your updated emotional state? Provide ONLY the JSON object.\n"
+		prompt += "<|eot_id|>\n"
+
 	default:
 		// Generic fallback if type is not specifically handled for user prompt part
 		prompt += "<|eot_id|>\n"
@@ -339,5 +365,26 @@ string ::= "\"" ([^"\\] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}))* "\"" space
 root ::= "{" space "\"result\"" space ":" space string "}" space
 `
 	srv.Log.Debugln("Generated String Result Grammar: ", grammar)
+	return grammar
+}
+
+func (srv *PromptService) AssembleEmotionalGrammar() string {
+	grammar := `
+	root ::= object
+object ::= "{" ws "\"Emotions\"" ws ":" ws emotions_map "," ws "\"Triggers\"" ws ":" ws triggers_array "}"
+emotions_map ::= "{" ws (pair ("," ws pair)*)? ws "}"
+pair ::= string_ escapes ws ":" ws number_0_100
+string_escapes ::= "\"" (
+    [^"\\] |
+    "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4})
+  )* "\""
+number_0_100 ::= ("100" | "0" | "1".."9" | "1".."9" "0".."9")
+triggers_array ::= "[" ws (trigger_object ("," ws trigger_object)*)? ws "]"
+trigger_object ::= "{" ws "\"ID\"" ws ":" ws number "," ws "\"Description\"" ws ":" ws string_escapes "," ws "\"TargetEmotion\"" ws ":" ws target_emotion "," ws "\"Intensity\"" ws ":" ws number_0_100 "}"
+number ::= ("0" | ("1".."9" ("0".."9")*))
+target_emotion ::= "\"Joy\"" | "\"Trust\"" | "\"Fear\"" | "\"Surprise\"" | "\"Sadness\"" | "\"Disgust\"" | "\"Anger\"" | "\"Anticipation\""
+ws ::= [ \t\n]*
+`
+	srv.Log.Debugln("Generated Emotional Grammar: ", grammar)
 	return grammar
 }

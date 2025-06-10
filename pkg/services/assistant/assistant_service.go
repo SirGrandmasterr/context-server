@@ -271,7 +271,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 						Stage:      inst.Stage,
 					}
 					lastSentResponse = currentFullText
-					// Do not reset accumulatedResponse here, let it build the full sentence/thought
+					accumulatedResponse.Reset() //  reset accumulatedResponse here, otherwise TTS will repeat itself
 				}
 			}
 			if streamResp.Stop {
@@ -361,6 +361,55 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 		ActionName: actionName, // The parent action
 		Stage:      inst.Stage,
 	}, nil
+}
+
+func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.Instructions) (entities.EmotionalState, error) {
+	url := srv.Conf.LlmSmall
+	if inst.LlmSize == "big" {
+		url = srv.Conf.LlmBig
+	}
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, inst.BasePrompt)
+	if err != nil {
+		srv.Log.Errorw("Prompt assembly failed for ActionQuery", "error", err)
+		return entities.EmotionalState{}, err
+	}
+	// Temperature for selection from a list should be low.
+	payloadStruct := srv.AssemblePayload(500, false, 0.7, prompt, srv.Pr.AssembleEmotionalGrammar(), 5) // Reduced nPredict
+	payload, err := json.Marshal(payloadStruct)
+	if err != nil {
+		srv.Log.Errorw("Failed to marshal payload for ActionQuery", "error", err)
+		return entities.EmotionalState{}, err
+	}
+	srv.Log.Debugw("EmotionUpdate LLM Request", "url", url, "payload", string(payload))
+
+	res, err := srv.callLLM(url, payload, false)
+	if err != nil {
+		return entities.EmotionalState{}, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Errorw("Failed to read LLM response body for ActionQuery", "error", err)
+		return entities.EmotionalState{}, err
+	}
+	srv.Log.Debugw("EmotionUpdate LLM Raw Response", "body", string(body))
+
+	var serverResponse entities.AssistantResponse
+	if err := json.Unmarshal(body, &serverResponse); err != nil {
+		srv.Log.Errorw("Failed to unmarshal LLM server response for ActionQuery", "body", string(body), "error", err)
+		return entities.EmotionalState{}, err
+	}
+
+	var result entities.EmotionalState // Expecting {"result": "chosen_material_name"}
+	if err := json.Unmarshal([]byte(serverResponse.Content), &result); err != nil {
+		srv.Log.Errorw("Failed to unmarshal action query result from LLM content", "content", serverResponse.Content, "error", err)
+		return entities.EmotionalState{}, fmt.Errorf("LLM returned non-JSON content for action query: %s", serverResponse.Content)
+	}
+
+	srv.Log.Infow("EmotionUpdate Result", result)
+
+	return entities.EmotionalState{}, nil
 }
 
 // ActionQuery lets the LLM choose from a list of materials based on instructions and speech.

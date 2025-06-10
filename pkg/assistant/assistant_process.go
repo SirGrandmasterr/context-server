@@ -297,6 +297,29 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 
 			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			break
+
+		case "reactiveEmotionalStateAnalysis":
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
+				return
+			}
+			ap.Log.Infoln("Instructionloop: actionquery.", "Stage: ", rune(inst.Stage))
+			result, err := ap.aserv.ActionQuery(msg, inst, action_db.ActionName)
+			if err != nil {
+				ap.Log.Errorln(err)
+			}
+			result.Token = tok.ID
+			result.Stage = inst.Stage
+			ap.responseChannel <- &result
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
+			ap.Log.Infoln("Test")
+			break
 		}
 		//This is only ever true in actionUpdate, and is supposed to be used for one instruction only.
 		msg.ActionContext.Permission = false
