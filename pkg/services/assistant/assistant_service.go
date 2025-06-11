@@ -96,7 +96,7 @@ func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMess
 		effectiveTemp = 0.5
 	}
 
-	payloadStruct := srv.AssemblePayload(50, false, effectiveTemp, prompt, srv.Pr.AssembleActionGrammarEnum(msg), 5) // Reduced nPredict for action selection
+	payloadStruct := srv.AssemblePayload(50, false, effectiveTemp, prompt, srv.Pr.AssembleActionGrammarEnum(msg), srv.Pr.AssembleEmpty(), 5) // Reduced nPredict for action selection
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for DetectAction", "error", err)
@@ -154,7 +154,7 @@ func (srv *Service) DecideReaction(ctx context.Context, msg entities.WebSocketMe
 
 	// Environmental reactions might need more nuanced understanding, so LlmBig is appropriate.
 	// Temperature can be moderate to allow for some flexibility but not too random.
-	payloadStruct := srv.AssemblePayload(50, false, 0.6, prompt, srv.Pr.AssembleActionGrammarEnum(msg), 5) // Reduced nPredict
+	payloadStruct := srv.AssemblePayload(50, false, 0.6, prompt, srv.Pr.AssembleActionGrammarEnum(msg), srv.Pr.AssembleEmpty(), 5) // Reduced nPredict
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for DecideReaction", "error", err)
@@ -208,8 +208,8 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 		return
 	}
 	// Temperature for speech can be higher for more natural responses.
-	payloadStruct := srv.AssemblePayload(inst.Limit, true, 0.8, prompt, "", 5) // inst.Limit for nPredict if set, else default
-	if inst.Limit == 0 {                                                       // Ensure nPredict is reasonable if Limit is 0
+	payloadStruct := srv.AssemblePayload(inst.Limit, true, 0.8, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmpty(), 5) // inst.Limit for nPredict if set, else default
+	if inst.Limit == 0 {                                                                                                   // Ensure nPredict is reasonable if Limit is 0
 		payloadStruct.NPredict = 256 // Default for speech
 	}
 
@@ -315,7 +315,7 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	}
 
 	// Temperature for analysis/extraction should be low.
-	payloadStruct := srv.AssemblePayload(inst.Limit, false, 0.3, prompt, srv.Pr.AssembleGrammarString(), 5) // inst.Limit for nPredict
+	payloadStruct := srv.AssemblePayload(inst.Limit, false, 0.3, prompt, srv.Pr.AssembleGrammarString(), srv.Pr.AssembleEmpty(), 5) // inst.Limit for nPredict
 	if inst.Limit == 0 {
 		payloadStruct.NPredict = 100 // Default for analysis
 	}
@@ -363,7 +363,7 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	}, nil
 }
 
-func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.Instructions) (entities.EmotionalState, error) {
+func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
 	url := srv.Conf.LlmSmall
 	if inst.LlmSize == "big" {
 		url = srv.Conf.LlmBig
@@ -371,45 +371,50 @@ func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.I
 	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, inst.BasePrompt)
 	if err != nil {
 		srv.Log.Errorw("Prompt assembly failed for ActionQuery", "error", err)
-		return entities.EmotionalState{}, err
+		return entities.WebSocketAnswer{}, err
 	}
 	// Temperature for selection from a list should be low.
-	payloadStruct := srv.AssemblePayload(500, false, 0.7, prompt, srv.Pr.AssembleEmotionalGrammar(), 5) // Reduced nPredict
+	payloadStruct := srv.AssemblePayload(500, false, 0.7, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmotionalSchema(), 5) // Reduced nPredict
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for ActionQuery", "error", err)
-		return entities.EmotionalState{}, err
+		return entities.WebSocketAnswer{}, err
 	}
 	srv.Log.Debugw("EmotionUpdate LLM Request", "url", url, "payload", string(payload))
 
 	res, err := srv.callLLM(url, payload, false)
 	if err != nil {
-		return entities.EmotionalState{}, err
+		return entities.WebSocketAnswer{}, err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		srv.Log.Errorw("Failed to read LLM response body for ActionQuery", "error", err)
-		return entities.EmotionalState{}, err
+		return entities.WebSocketAnswer{}, err
 	}
 	srv.Log.Debugw("EmotionUpdate LLM Raw Response", "body", string(body))
 
 	var serverResponse entities.AssistantResponse
 	if err := json.Unmarshal(body, &serverResponse); err != nil {
 		srv.Log.Errorw("Failed to unmarshal LLM server response for ActionQuery", "body", string(body), "error", err)
-		return entities.EmotionalState{}, err
+		return entities.WebSocketAnswer{}, err
 	}
 
 	var result entities.EmotionalState // Expecting {"result": "chosen_material_name"}
 	if err := json.Unmarshal([]byte(serverResponse.Content), &result); err != nil {
 		srv.Log.Errorw("Failed to unmarshal action query result from LLM content", "content", serverResponse.Content, "error", err)
-		return entities.EmotionalState{}, fmt.Errorf("LLM returned non-JSON content for action query: %s", serverResponse.Content)
+		return entities.WebSocketAnswer{}, fmt.Errorf("LLM returned non-JSON content for action query: %s", serverResponse.Content)
 	}
 
 	srv.Log.Infow("EmotionUpdate Result", result)
+	return entities.WebSocketAnswer{
+		Type:       inst.Type,
+		Text:       serverResponse.Content,
+		ActionName: actionName,
+		Stage:      inst.Stage,
+	}, nil
 
-	return entities.EmotionalState{}, nil
 }
 
 // ActionQuery lets the LLM choose from a list of materials based on instructions and speech.
@@ -426,7 +431,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 	}
 
 	// Temperature for selection from a list should be low.
-	payloadStruct := srv.AssemblePayload(50, false, 0.3, prompt, srv.Pr.AssembleMaterialChoiceGrammar(msg, inst), 5) // Reduced nPredict
+	payloadStruct := srv.AssemblePayload(50, false, 0.3, prompt, srv.Pr.AssembleMaterialChoiceGrammar(msg, inst), "", 5) // Reduced nPredict
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for ActionQuery", "error", err)
@@ -469,7 +474,7 @@ func (srv *Service) ActionQuery(msg entities.WebSocketMessage, inst entities.Ins
 }
 
 // AssemblePayload creates the request payload for the LLM.
-func (srv *Service) AssemblePayload(nPredict int, stream bool, temperature float32, prompt string, grammar string, mirostatTau int) entities.LlmRequest {
+func (srv *Service) AssemblePayload(nPredict int, stream bool, temperature float32, prompt string, grammar string, schema string, mirostatTau int) entities.LlmRequest {
 	if nPredict <= 0 {
 		nPredict = 256 // Default prediction length
 	}
@@ -514,6 +519,7 @@ func (srv *Service) AssemblePayload(nPredict int, stream bool, temperature float
 		CachePrompt:      true, // Enable prompt caching if LLM supports it well
 		APIKey:           "",   // API key if required by the LLM server
 		Prompt:           prompt,
+		JsonSchema:       schema,
 	}
 }
 
@@ -536,7 +542,7 @@ func (srv *Service) StreamAssistantTest(msg entities.WebSocketMessage, inst enti
 		nPredict = 256 // Default for speech
 	}
 
-	payloadStruct := srv.AssemblePayload(nPredict, false, temp, prompt, "", miro) // stream is false
+	payloadStruct := srv.AssemblePayload(nPredict, false, temp, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmpty(), miro) // stream is false
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for StreamAssistantTest", "error", err)

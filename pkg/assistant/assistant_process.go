@@ -310,7 +310,7 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 				return
 			}
 			ap.Log.Infoln("Instructionloop: actionquery.", "Stage: ", rune(inst.Stage))
-			result, err := ap.aserv.ActionQuery(msg, inst, action_db.ActionName)
+			result, err := ap.aserv.EmotionUpdate(msg, inst, action_db.ActionName)
 			if err != nil {
 				ap.Log.Errorln(err)
 			}

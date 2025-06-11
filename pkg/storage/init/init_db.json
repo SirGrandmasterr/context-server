@@ -135,7 +135,7 @@
         {
             "actionname": "emotionalConversation",
             "description": "Choose this action if the visitor makes a general statement, asks a question not covered by other specific actions (like simple greetings, farewells, or small talk), or you need to provide a conversational reply that doesn't involve a direct task. Use this for maintaining a natural conversation flow.",
-            "stages": 2,
+            "stages": 3,
             "instructions":[
                 {"stage": 1, "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
                 {"stage": 2, "stage_instructions": "Update your emotional state based on the last interactions with the visitor.", "type": "reactiveEmotionalStateAnalysis", "baseprompt": "museumAssistant", "llmSize": "small"},

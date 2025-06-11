@@ -369,22 +369,13 @@ root ::= "{" space "\"result\"" space ":" space string "}" space
 }
 
 func (srv *PromptService) AssembleEmotionalGrammar() string {
-	grammar := `
-	root ::= object
-object ::= "{" ws "\"Emotions\"" ws ":" ws emotions_map "," ws "\"Triggers\"" ws ":" ws triggers_array "}"
-emotions_map ::= "{" ws (pair ("," ws pair)*)? ws "}"
-pair ::= string_ escapes ws ":" ws number_0_100
-string_escapes ::= "\"" (
-    [^"\\] |
-    "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4})
-  )* "\""
-number_0_100 ::= ("100" | "0" | "1".."9" | "1".."9" "0".."9")
-triggers_array ::= "[" ws (trigger_object ("," ws trigger_object)*)? ws "]"
-trigger_object ::= "{" ws "\"ID\"" ws ":" ws number "," ws "\"Description\"" ws ":" ws string_escapes "," ws "\"TargetEmotion\"" ws ":" ws target_emotion "," ws "\"Intensity\"" ws ":" ws number_0_100 "}"
-number ::= ("0" | ("1".."9" ("0".."9")*))
-target_emotion ::= "\"Joy\"" | "\"Trust\"" | "\"Fear\"" | "\"Surprise\"" | "\"Sadness\"" | "\"Disgust\"" | "\"Anger\"" | "\"Anticipation\""
-ws ::= [ \t\n]*
+	schema := `
+
 `
-	srv.Log.Debugln("Generated Emotional Grammar: ", grammar)
-	return grammar
+	srv.Log.Debugln("Generated Emotional Grammar: ", schema)
+	return schema
+}
+
+func (srv *PromptService) AssembleEmpty() string {
+	return ""
 }
