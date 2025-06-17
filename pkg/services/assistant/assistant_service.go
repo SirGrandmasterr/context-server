@@ -374,7 +374,7 @@ func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.I
 		return entities.WebSocketAnswer{}, err
 	}
 	// Temperature for selection from a list should be low.
-	payloadStruct := srv.AssemblePayload(500, false, 0.7, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmotionalSchema(), 5) // Reduced nPredict
+	payloadStruct := srv.AssemblePayload(500, false, 0.7, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmotionalGrammar(), 5) // Reduced nPredict
 	payload, err := json.Marshal(payloadStruct)
 	if err != nil {
 		srv.Log.Errorw("Failed to marshal payload for ActionQuery", "error", err)

@@ -5,6 +5,7 @@ import (
 	"Llamacommunicator/pkg/storage"
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -168,7 +169,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		// Fallback to a generic instruction if the specific base prompt is missing
 		baseprompt = entities.BasePrompt{Prompt: "You are a helpful gallery assistant."}
 	}
-	hist := srv.Storage.ReadPlayerHistory(3, msg.PlayerContext.PlayerUsername) // Shorter history for instruction-specific context
+	hist := srv.Storage.ReadPlayerHistory(40, msg.PlayerContext.PlayerUsername) // Shorter history for instruction-specific context
 
 	prompt += "<|start_header_id|>system<|end_header_id|>\n"
 	prompt += baseprompt.Prompt + "\n\n" // Base persona prompt
@@ -198,6 +199,18 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	}
 	prompt += "\n"
 
+	// Emotional state
+	prompt += "YOUR EMOTIONAL STATE \n"
+	prompt += "Let your emotional state and its triggers strongly influence your answer and its wording."
+	prompt += "EMOTIONAL VALUES: \n"
+	for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
+		prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
+	}
+	prompt += "EMOTIONAL TRIGGERS: \n"
+	for _, em := range msg.AssistantContext.EmotionalState.Triggers {
+		prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
+	}
+
 	// Specific instruction for the current stage
 	prompt += "YOUR CURRENT TASK:\n"
 	prompt += inst.StageInstructions + "\n\n" // This is the core instruction for the LLM for this stage
@@ -213,10 +226,11 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	case "speech":
 		// The main instruction is already in `inst.StageInstructions`.
 		// We need to guide the LLM to generate a speech response.
-		prompt += "Formulate a concise and friendly response to the visitor based on this task. Speak directly to them.\n"
+		prompt += "Formulate a concise response to the interlocutor based on this task. Speak directly to them. Let your emotional state and its triggers strongly influence your answer and its wording.\n"
+		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. \n"
 		prompt += "<|eot_id|>\n"
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
-		prompt += "Visitor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
+		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
 		prompt += "<|eot_id|>\n"
 	case "actionquery":
 		// This type expects the LLM to choose from the provided materials.
