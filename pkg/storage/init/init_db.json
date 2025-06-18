@@ -137,8 +137,8 @@
             "description": "Choose this action if the visitor makes a general statement, asks a question not covered by other specific actions (like simple greetings, farewells, or small talk), or you need to provide a conversational reply that doesn't involve a direct task. Use this for maintaining a natural conversation flow.",
             "stages": 2,
             "instructions":[
-                {"stage": 1, "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.", "type": "actionselection", "baseprompt": "bundeswehrCaptain", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has said something that requires a conversational response. Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Let your emotional state influence your answer. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'", "type": "speech", "baseprompt": "bundeswehrCaptain", "llmSize": "big", "limit": 500}
+                {"stage": 1, "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.", "type": "actionselection", "baseprompt": "", "llmSize": "small"},
+                {"stage": 2, "stage_instructions": "The visitor has said something that requires a conversational response. Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Let your emotional state influence your answer. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'", "type": "speech", "baseprompt": "", "llmSize": "big", "limit": 500}
             ]
         }
        

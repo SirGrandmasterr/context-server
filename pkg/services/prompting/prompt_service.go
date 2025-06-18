@@ -162,8 +162,10 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	prompt := "<|begin_of_text|>"
 	// Use the baseprompt name specified in the instruction, or default to museumAssistant
 	finalBasePromptName := inst.BasePrompt
+	srv.Log.Infoln("Inst.BasePrompt: ", finalBasePromptName)
 	// If none are in the instructions, check if the webSocketMessage sent something
 	if finalBasePromptName == "" {
+		srv.Log.Infoln("SelectedBasePrompt: ", finalBasePromptName)
 		finalBasePromptName = msg.AssistantContext.SelectedBasePrompt
 	}
 	// TODO: Create an Override system in the instructions to decide in the action instructions whether the msg BasePrompt should be used or a special one.
@@ -235,7 +237,8 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		// The main instruction is already in `inst.StageInstructions`.
 		// We need to guide the LLM to generate a speech response.
 		prompt += "Formulate a concise response to the interlocutor based on this task. Speak directly to them. Let your emotional state and its triggers strongly influence your answer and its wording.\n"
-		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. \n"
+		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. THESE TAGS ARE LITERAL AND NOT TO BE IMPROVISED UPON.\n"
+		prompt += "Do not use any kind of actiontags and instead describe noises using either the specific tags above, or by utilizing onomatopoeia. Example: Instead of *yells*, write out the yell like \"AAAAAAH!\". Instead of \"(shakes head)\" use a fitting tag like <chuckle> or leave it out entirely."
 		prompt += "<|eot_id|>\n"
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
 		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
