@@ -236,7 +236,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	case "speech":
 		// The main instruction is already in `inst.StageInstructions`.
 		// We need to guide the LLM to generate a speech response.
-		prompt += "Formulate a concise response to the interlocutor based on this task. Speak directly to them. Let your emotional state and its triggers strongly influence your answer and its wording.\n"
+		prompt += "Formulate a concise response to the visitor based on this task. Speak directly to them. Let your emotional state and its triggers strongly influence your answer and its wording.\n"
 		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. THESE TAGS ARE LITERAL AND NOT TO BE IMPROVISED UPON.\n"
 		prompt += "Do not use any kind of actiontags and instead describe noises using either the specific tags above, or by utilizing onomatopoeia. Example: Instead of *yells*, write out the yell like \"AAAAAAH!\". Instead of \"(shakes head)\" use a fitting tag like <chuckle> or leave it out entirely."
 		prompt += "<|eot_id|>\n"
