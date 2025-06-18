@@ -35,9 +35,12 @@ func (srv *PromptService) AssemblePrompt(msg entities.WebSocketMessage) (string,
 	}
 
 	prompt := "<|begin_of_text|>"
-
+	selectedBaseprompt := msg.AssistantContext.SelectedBasePrompt
+	if selectedBaseprompt == "" {
+		selectedBaseprompt = "galleryGuideInterpreter"
+	}
 	// Use a specific base prompt for action selection, emphasizing the gallery guide persona.
-	baseprompt, err := srv.Storage.ReadBasePrompt("galleryGuideInterpreter", context.Background())
+	baseprompt, err := srv.Storage.ReadBasePrompt(selectedBaseprompt, context.Background())
 	if err != nil {
 		srv.Log.Errorln("Error reading BasePrompt 'galleryGuideInterpreter':", err)
 		// Fallback to a generic instruction if the specific base prompt is missing
@@ -159,8 +162,13 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	prompt := "<|begin_of_text|>"
 	// Use the baseprompt name specified in the instruction, or default to museumAssistant
 	finalBasePromptName := inst.BasePrompt
+	// If none are in the instructions, check if the webSocketMessage sent something
 	if finalBasePromptName == "" {
-		finalBasePromptName = "museumAssistant" // Default to museumAssistant if not specified
+		finalBasePromptName = msg.AssistantContext.SelectedBasePrompt
+	}
+	// TODO: Create an Override system in the instructions to decide in the action instructions whether the msg BasePrompt should be used or a special one.
+	if finalBasePromptName == "" {
+		finalBasePromptName = "galleryGuideInterpreter" // Default to museumAssistant if not specified
 	}
 
 	baseprompt, err := srv.Storage.ReadBasePrompt(finalBasePromptName, context.Background())

@@ -78,6 +78,12 @@ func (srv *Service) callLLM(url string, payload []byte, stream bool) (*http.Resp
 
 // DetectAction determines the action an assistant should take based on the message context.
 func (srv *Service) DetectAction(ctx context.Context, msg entities.WebSocketMessage, temp float32) entities.LlmActionResponse {
+
+	// Bypass asking small LLM for action selection if only a single action is available anyways. Saves a lot of time.
+	if len(msg.AssistantContext.AvailableActions) == 1 {
+		return entities.LlmActionResponse{ActionName: msg.AssistantContext.AvailableActions[0]}
+	}
+
 	prompt, err := srv.Pr.AssemblePrompt(msg)
 	if err != nil {
 		srv.Log.Errorw("Prompt assembly failed for DetectAction", "error", err)
