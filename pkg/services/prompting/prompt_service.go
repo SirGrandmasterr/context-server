@@ -211,7 +211,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 
 	// Emotional state
 	prompt += "YOUR EMOTIONAL STATE \n"
-	prompt += "Let your emotional state and its triggers strongly influence your answer and its wording."
+	prompt += "Let your emotional state and its triggers strongly your answer and its wording."
 	prompt += "EMOTIONAL VALUES: \n"
 	for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
 		prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
@@ -236,9 +236,10 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	case "speech":
 		// The main instruction is already in `inst.StageInstructions`.
 		// We need to guide the LLM to generate a speech response.
-		prompt += "Formulate a concise response to the visitor based on this task. Speak directly to them. Let your emotional state and its triggers strongly influence your answer and its wording.\n"
+		prompt += "Formulate a concise response to the visitor based on this task. Speak directly to them. Let your emotional state strongly influence your answer and its wording.\n"
+		prompt += "Keep answers short and interactive unless a technical answer requires a small monologue. Let your emotional triggers influence the flow of the conversation."
 		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. THESE TAGS ARE LITERAL AND NOT TO BE IMPROVISED UPON.\n"
-		prompt += "Do not use any kind of actiontags and instead describe noises using either the specific tags above, or by utilizing onomatopoeia. Example: Instead of *yells*, write out the yell like \"AAAAAAH!\". Instead of \"(shakes head)\" use a fitting tag like <chuckle> or leave it out entirely."
+		prompt += "Do not use any kind of actiontags and instead describe noises using either the specific tags above, or by utilizing onomatopoeia. Example: Instead of *yells*, write out the yell like \"AAAAAAH!\". Instead of \"(shakes head)\" use a fitting tag like <chuckle> or leave it out entirely. Instead of *thinks strongly*, write \"Hmmmm.\"."
 		prompt += "<|eot_id|>\n"
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
 		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
