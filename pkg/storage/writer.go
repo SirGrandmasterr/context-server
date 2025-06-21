@@ -23,28 +23,6 @@ func NewStorageWriter(log *zap.SugaredLogger, db *mongo.Database) *StorageWriter
 	}
 }
 
-func (strg *StorageWriter) SaveActionOptionEntity(action entities.Action, ctx context.Context) error {
-	actionCollection := strg.Db.Collection("actions")
-	opts := options.Update().SetUpsert(true)
-	filter := bson.D{{Key: `action_name`, Value: action.ActionName}}
-
-	instructions := make([]bson.D, len(action.Instructions))
-	for i, instruction := range action.Instructions {
-		instructions[i] = bson.D{{Key: "stage", Value: instruction.Stage}, {Key: "stage_instructions", Value: instruction.StageInstructions}, {Key: "type", Value: instruction.Type}}
-	}
-
-	update := bson.D{{Key: "$set", Value: bson.D{
-		{Key: "action_name", Value: action.ActionName},
-		{Key: "description", Value: action.Description},
-		{Key: "stages", Value: action.Stages}}},
-		{Key: "instructions", Value: instructions}}
-	_, err := actionCollection.UpdateOne(context.Background(), filter, update, opts)
-	if err != nil {
-		strg.Log.Errorln("Error inserting Action Option", err)
-	}
-	return nil
-}
-
 func (strg *StorageWriter) SaveActionOptionEntity2(action entities.Action, ctx context.Context) error {
 	actionCollection := strg.Db.Collection("actions")
 	_, err := actionCollection.InsertOne(ctx, action)

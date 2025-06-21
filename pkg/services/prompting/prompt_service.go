@@ -179,11 +179,19 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		// Fallback to a generic instruction if the specific base prompt is missing
 		baseprompt = entities.BasePrompt{Prompt: "You are a helpful gallery assistant."}
 	}
-	hist := srv.Storage.ReadPlayerHistory(40, msg.PlayerContext.PlayerUsername) // Shorter history for instruction-specific context
+
+	var hist []string
+
+	if inst.HistoryLength != 0 {
+		hist = srv.Storage.ReadPlayerHistory(inst.HistoryLength, msg.PlayerContext.PlayerUsername)
+	} else {
+		hist = srv.Storage.ReadPlayerHistory(10, msg.PlayerContext.PlayerUsername)
+	}
+	// Shorter history for instruction-specific context
 
 	prompt += "<|start_header_id|>system<|end_header_id|>\n"
 	prompt += baseprompt.Prompt + "\n\n" // Base persona prompt
-
+	otherAiemotion := false
 	// Provide materials if any
 	if len(inst.Material) > 0 {
 		material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, msg.PlayerContext, context.Background())
@@ -193,6 +201,10 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 			prompt += "RELEVANT INFORMATION (Materials):\n"
 			for _, mat := range material {
 				prompt += `- ` + mat.Name + `: ` + mat.Description + `\n`
+				if mat.Name == "selectedBasePrompt" {
+					//We want someone elses baseprompt, so probably that guy's emotions too
+					otherAiemotion = true
+				}
 			}
 			prompt += "\n"
 		}
@@ -209,16 +221,35 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	}
 	prompt += "\n"
 
-	// Emotional state
-	prompt += "YOUR EMOTIONAL STATE \n"
-	prompt += "Let your emotional state and its triggers strongly your answer and its wording."
-	prompt += "EMOTIONAL VALUES: \n"
-	for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
-		prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
+	if otherAiemotion {
+		if inst.Emotions {
+			// Emotional state
+			prompt += "PROVIDED EMOTIONAL STATE \n"
+			prompt += "This emotional state belongs to the provided baseprompt and indicates the state of mind of whom that baseprompt was applied to."
+			prompt += "EMOTIONAL VALUES: \n"
+			for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
+				prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
+			}
+			prompt += "EMOTIONAL TRIGGERS: \n"
+			for _, em := range msg.AssistantContext.EmotionalState.Triggers {
+				prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
+			}
+		}
+
 	}
-	prompt += "EMOTIONAL TRIGGERS: \n"
-	for _, em := range msg.AssistantContext.EmotionalState.Triggers {
-		prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
+
+	if inst.Emotions {
+		// Emotional state
+		prompt += "YOUR EMOTIONAL STATE \n"
+		prompt += "Let your emotional state and its triggers strongly your answer and its wording."
+		prompt += "EMOTIONAL VALUES: \n"
+		for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
+			prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
+		}
+		prompt += "EMOTIONAL TRIGGERS: \n"
+		for _, em := range msg.AssistantContext.EmotionalState.Triggers {
+			prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
+		}
 	}
 
 	// Specific instruction for the current stage
@@ -253,6 +284,14 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
 		prompt += "Visitor's statement: \"" + msg.Speech + "\"\nWhich item do you select based on your task?\n"
 		prompt += "<|eot_id|>\n"
+	case "assistantHistoryAnalysis":
+		if msg.Speech != "" {
+			prompt += "The visitor said the following \"" + msg.Speech + "\"\n"
+			prompt += "<|eot_id|>\n"
+			prompt += "<|start_header_id|>user<|end_header_id|>\n"
+			prompt += "Visitor's statement: \"" + msg.Speech + "\"\nWhat is the result of your analysis based on the task?\n" // User part reiterates the input
+			prompt += "<|eot_id|>\n"
+		}
 	case "reactiveEmotionalStateAnalysis":
 		currentEmotionsJSON, _ := json.Marshal(msg.AssistantContext.EmotionalState)
 		currentEmotionsJSONString := string(currentEmotionsJSON)
@@ -402,6 +441,12 @@ func (srv *PromptService) AssembleEmotionalGrammar() string {
 	return schema
 }
 
+func (srv *PromptService) AssembleGradingGrammar() string {
+	grammar := `root ::= \"{\" ws01 root-grade \",\" ws01 root-justification \"}\" ws01\nroot-grade ::= \"\\\"grade\\\"\" \":\" ws01 (\"\\\"Excellent\\\"\" | \"\\\"Good\\\"\" | \"\\\"Average\\\"\" | \"\\\"Poor\\\"\" | \"\\\"Failing\\\"\")\nroot-justification ::= \"\\\"justification\\\"\" \":\" ws01 string\n\n\nvalue  ::= (object | array | string | number | boolean | null) ws\n\nobject ::=\n  \"{\" ws (\n    string \":\" ws value\n    (\",\" ws string \":\" ws value)*\n  )? \"}\"\n\narray  ::=\n  \"[\" ws01 (\n            value\n    (\",\" ws01 value)*\n  )? \"]\"\n\nstring ::=\n  \"\\\"\" (string-char)* \"\\\"\"\n\nstring-char ::= [^\"\\\\] | \"\\\\\" ([\"\\\\/bfnrt] | \"u\" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) # escapes\n\nnumber ::= integer (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\ninteger ::= \"-\"? ([0-9] | [1-9] [0-9]*)\nboolean ::= \"true\" | \"false\"\nnull ::= \"null\"\n\n# Optional space: by convention, applied in this grammar after literal chars when allowed\nws ::= ([ \\t\\n] ws)?\nws01 ::= ([ \\t\\n])?`
+	return grammar
+}
+
 func (srv *PromptService) AssembleEmpty() string {
 	return ""
+
 }
