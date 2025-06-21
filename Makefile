@@ -1,7 +1,7 @@
 compose = docker compose
 
 make-migrate-up:
-	docker compose exec llamawhisperer sh -c './llm-whisperer migrate'
+	$(compose) exec llamawhisperer sh -c './llm-whisperer migrate'
 
 make-up:
 	$(compose) up -d
@@ -11,7 +11,10 @@ make-down:
 
 make-setup:
 	$(compose) up --build -d
-	make-migrate-up
+	$(MAKE) make-migrate-up
+
+make-delete-db:
+	$(compose) exec -it mongodb mongosh --authenticationDatabase admin -u user -p pass --eval 'db.getSiblingDB("llamadrama").dropDatabase()'
 
 
 #./llama-server.exe -m '.\models\tinyllama-1.1b-chat-v1.0.Q8_0(1).gguf' -c 512 -ngl 50 

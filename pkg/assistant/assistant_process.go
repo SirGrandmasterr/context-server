@@ -45,17 +45,13 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.Log.Errorln("Error retrieving player", err)
 		}
 		ap.Log.Infoln("Updating Player History")
-		//player.History = player.History + "VISITOR: " + msg.Speech + "\n"
-		/*err = ap.aserv.StorageWriter.UpdatePlayerHistory(player.Username, player.History)
-		if err != nil {
-			ap.Log.Errorln(err)
-		}*/
+
 		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, "VISITOR: "+msg.Speech+"\n")
 		if err != nil {
 			ap.Log.Errorln(err)
 		}
 
-		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 0.8)
+		action := ap.aserv.DetectAction(context.Background(), msg, 0.8)
 		ap.Log.Infoln("Detected Action", action)
 		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
 		ap.Log.Infoln("Found Action in Database:", action_db)
@@ -79,6 +75,17 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 
 		//Needed to validate if all instructions are done
 		ap.InstructionsLoop(action_db, tok, msg, false)
+	case "directSpeechRequest":
+		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
+		if err != nil {
+			ap.Log.Errorln("Error retrieving player", err)
+		}
+		ap.Log.Infoln("Updating Player History")
+
+		err = ap.aserv.StorageWriter.PushPlayerHistoryElement(player.Username, "VISITOR: "+msg.Speech+"\n")
+		if err != nil {
+			ap.Log.Errorln(err)
+		}
 
 	case "playerHistoryUpdate":
 		player, err := ap.aserv.Storage.ReadPlayer(msg.PlayerContext.PlayerUsername, context.Background())
@@ -110,7 +117,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 		ap.InstructionsLoop(action, tok, msg, true)
 
 	case "envEvent":
-		actionResponse := ap.aserv.DecideReaction(context.Background(), msg, ap.serviceChannel)
+		actionResponse := ap.aserv.DecideReaction(context.Background(), msg)
 
 		if actionResponse.ActionName == "ignore" {
 			ap.Log.Infoln("Event was ignored.")
@@ -147,7 +154,7 @@ func (ap *AssistantProcess) Analyze(msg entities.WebSocketMessage) {
 			ap.InstructionsLoop(action_db, tok, msg, false)
 		}
 	case "innerThoughtEvent":
-		action := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 2)
+		action := ap.aserv.DetectAction(context.Background(), msg, 2)
 		ap.Log.Infoln("Detected Action", action)
 		action_db, err := ap.aserv.Storage.ReadActionOptionEntity(action.ActionName, context.Background())
 		ap.Log.Infoln("Found Action in Database:", action_db)
@@ -208,7 +215,7 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 				ap.responseChannel <- &answer
 				_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 			} else {
-				ac := ap.aserv.DetectAction(context.Background(), msg, ap.serviceChannel, 1.2)
+				ac := ap.aserv.DetectAction(context.Background(), msg, 1.2)
 				secondaryAction, err := ap.aserv.Storage.ReadActionOptionEntity(ac.ActionName, context.Background())
 				if err != nil {
 					ap.Log.Errorln(err)
@@ -289,6 +296,29 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 			go ap.aserv.StreamAssistant(msg, inst, tok)
 
 			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
+			break
+
+		case "reactiveEmotionalStateAnalysis":
+			if inst.PermissionRequired && !msg.ActionContext.Permission {
+				if actionUpdate {
+					deleted, _ := ap.CheckDeleteToken(action_db.Stages, tok)
+					if deleted {
+						return
+					}
+					continue
+				}
+				return
+			}
+			ap.Log.Infoln("Instructionloop: actionquery.", "Stage: ", rune(inst.Stage))
+			result, err := ap.aserv.EmotionUpdate(msg, inst, action_db.ActionName)
+			if err != nil {
+				ap.Log.Errorln(err)
+			}
+			result.Token = tok.ID
+			result.Stage = inst.Stage
+			ap.responseChannel <- &result
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
+			ap.Log.Infoln("Test")
 			break
 		}
 		//This is only ever true in actionUpdate, and is supposed to be used for one instruction only.

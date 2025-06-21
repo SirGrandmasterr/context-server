@@ -24,6 +24,7 @@ type LlmRequest struct {
 	CachePrompt      bool          `json:"cache_prompt"`
 	APIKey           string        `json:"api_key"`
 	Prompt           string        `json:"prompt"`
+	JsonSchema       string        `json:"json_schema"`
 }
 
 type StreamResponse struct {
