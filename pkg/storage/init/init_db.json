@@ -362,6 +362,31 @@
             ]
         },
         {
+            "actionname": "introduceYourself",
+            "description": "Choose this action if the visitor asks what you can do, what your functions are, or how you can help them. Do not choose this if they are asking about art, artists, or the gallery building itself (use 'provideArtInformation' or 'provideGeneralInformation' for those).",
+            "stages": 2,
+            "instructions": [
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor wants to know what you can do. Prepare to explain your capabilities.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "You have just approached the visitor for reasons laid out above. Strike up a conversation introduce yourself briefly and ask for their name in return.",
+                    "type": "speech",
+                    "material": [
+                    ],
+                    "baseprompt": "",
+                    "llmSize": "big",
+                    "limit": 80
+                }
+            ]
+        },
+        {
             "actionname": "emotionalConversation",
             "description": "Choose this action if the visitor makes a general statement, asks a question not covered by other specific actions (like simple greetings, farewells, or small talk), or you need to provide a conversational reply that doesn't involve a direct task. Use this for maintaining a natural conversation flow.",
             "stages": 2,
