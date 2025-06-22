@@ -349,7 +349,7 @@
                 },
                 {
                     "stage": 2,
-                    "stage_instructions": "Your task is to evaluate a human's written feedback on a recent interaction they had with a voice- and bodylanguage capable, LLM-driven AI Avatar called Leo. You will be provided with comprehensive data from that interaction, including their conversation history, Leos prompt and the emotional states he was programmed to exhibit. Furthermore, the facial expressions shown by Leo to the human will be added. Only consider them if they are mentioned by the human. Based on this data, you will assess the accuracy of the human's analysis of the Llama's internal state. You must assign a grade to the human's feedback and provide a concise justification for your assessment.",
+                    "stage_instructions": "Your task is to evaluate a human's written feedback on a recent interaction they had with a voice- and bodylanguage capable, LLM-driven AI Avatar called Leo. You will be provided with comprehensive data from that interaction, including their conversation history, Leos prompt and the emotional states he was programmed to exhibit. Furthermore, the facial expressions shown by Leo to the human will be added. Only consider them if they are mentioned by the human. Based on this data, you will assess the accuracy of the human's analysis of the Llama's internal state. BE FAIR AND LENIENT: THE HUMAN ONLY HAS THE INFORMATION PROVIDED DIRECTLY BY LEO. Example: If Leos prompt says he is sad due to a painting, but the painting or his sadness is never mentioned to the human, the human cannot be at fault for not knowing about the painting. You must assign a grade to the human's feedback and provide a concise justification for your assessment.",
                     "type": "assistantHistoryAnalysis",
                     "baseprompt": "emotionAnalyzer",
                     "llmSize": "big",
@@ -358,6 +358,32 @@
                     ],
                     "limit": 150,
                     "historyLength": 200
+                }
+            ]
+        },
+        {
+            "actionname": "introduceYourself",
+            "description": "Choose this action if the visitor asks what you can do, what your functions are, or how you can help them. Do not choose this if they are asking about art, artists, or the gallery building itself (use 'provideArtInformation' or 'provideGeneralInformation' for those).",
+            "stages": 2,
+            "instructions": [
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor wants to know what you can do. Prepare to explain your capabilities.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "You have just approached the visitor for reasons laid out above. Strike up a conversation introduce yourself briefly and ask for their name in return.",
+                    "type": "speech",
+                    "material": [
+                    ],
+                    "baseprompt": "",
+                    "emotions": true,
+                    "llmSize": "big",
+                    "limit": 80
                 }
             ]
         },

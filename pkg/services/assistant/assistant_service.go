@@ -267,7 +267,7 @@ func (srv *Service) StreamAssistant(msg entities.WebSocketMessage, inst entities
 
 			// Send partial responses based on sentence-ending punctuation or significant length
 			currentFullText := accumulatedResponse.String()
-			if strings.ContainsAny(streamResp.Content, ".!?\n") || (len(currentFullText)-len(lastSentResponse) > 80) { // Heuristic for sending partials
+			if strings.ContainsAny(streamResp.Content, ".!?\n") { // Heuristic for sending partials
 				if strings.TrimSpace(currentFullText) != "" && currentFullText != lastSentResponse {
 					srv.ClientResponseChannel <- &entities.WebSocketAnswer{
 						Type:       "speech",

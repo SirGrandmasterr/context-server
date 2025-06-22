@@ -181,17 +181,19 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	}
 
 	var hist []string
-
+	srv.Log.Infof("Inst Historylength: ", inst.HistoryLength)
 	if inst.HistoryLength != 0 {
+		srv.Log.Infof("Reading ", inst.HistoryLength, " entries")
 		hist = srv.Storage.ReadPlayerHistory(inst.HistoryLength, msg.PlayerContext.PlayerUsername)
 	} else {
+		srv.Log.Infof("Reading ", 10, " entries")
 		hist = srv.Storage.ReadPlayerHistory(10, msg.PlayerContext.PlayerUsername)
 	}
 	// Shorter history for instruction-specific context
 
 	prompt += "<|start_header_id|>system<|end_header_id|>\n"
 	prompt += baseprompt.Prompt + "\n\n" // Base persona prompt
-	otherAiemotion := false
+
 	// Provide materials if any
 	if len(inst.Material) > 0 {
 		material, err := srv.Storage.ReadMaterials(inst.Material, msg.AssistantContext, msg.PlayerContext, context.Background())
@@ -203,7 +205,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 				prompt += `- ` + mat.Name + `: ` + mat.Description + `\n`
 				if mat.Type == "selectedBasePrompt" {
 					//We want someone elses baseprompt, so probably that guy's emotions too
-					otherAiemotion = true
+
 				}
 			}
 			prompt += "\n"
@@ -216,13 +218,14 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "No recent conversation history available for this specific task.\n"
 	} else {
 		for _, entry := range hist {
+			srv.Log.Infof("Entering History entry: ", entry)
 			prompt += entry + "\n"
 		}
 	}
 	prompt += "\n"
 
-	if otherAiemotion {
-
+	if inst.Type == "assistantHistoryAnalysis" {
+		srv.Log.Infof("OtherAiEmotion active and emotions are being added.")
 		// Emotional state
 		prompt += "PROVIDED EMOTIONAL STATE \n"
 		prompt += "This emotional state belongs to the provided baseprompt and indicates the state of mind of whom that baseprompt was applied to."

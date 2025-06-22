@@ -137,7 +137,7 @@ func (strg *StorageWriter) SavePlayers(pl entities.Player, ctx context.Context) 
 }
 
 func (strg *StorageWriter) UpdatePlayerHistory(username string, history string) error {
-	strg.Log.Infoln("Updating Player History")
+
 	playerCollection := strg.Db.Collection("players")
 	filter := bson.D{{Key: `username`, Value: username}}
 	update := bson.D{{Key: "$set", Value: bson.D{
@@ -151,7 +151,7 @@ func (strg *StorageWriter) UpdatePlayerHistory(username string, history string) 
 }
 
 func (strg *StorageWriter) PushPlayerHistoryElement(username string, historyElement string) error {
-	strg.Log.Infoln("Pushing to PlayerHistoryArray")
+	strg.Log.Infoln("Inserted ", username, "'s history entry ", historyElement)
 	playerCollection := strg.Db.Collection("players")
 	filter := bson.D{{Key: `username`, Value: username}}
 	update := bson.D{{Key: "$push", Value: bson.D{
@@ -165,7 +165,7 @@ func (strg *StorageWriter) PushPlayerHistoryElement(username string, historyElem
 }
 
 func (strg *StorageWriter) ResetPlayerHistory(username string) error {
-	strg.Log.Infoln("Resetting Player History")
+
 	playerCollection := strg.Db.Collection("players")
 	newHistory := []string{""}
 	filter := bson.D{{Key: `username`, Value: username}}

@@ -45,7 +45,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 	go s.LoopForClientResponseChannel(conn, clientResponseChannel)
 	for {
 		_, msg, err := conn.ReadMessage()
-		s.Log.Infoln("Received Message: ")
+		//s.Log.Infoln("Received Message: ")
 		if err != nil {
 			s.Log.Errorln("Read Error:", err)
 			break
@@ -54,7 +54,7 @@ func (s *WebSocketServer) HandleWebSocket(conn *websocket.Conn) {
 		if err := json.Unmarshal(msg, &message); err != nil {
 			s.Log.Fatalf("Error Unmarshalling")
 		} else {
-			s.Log.Infoln(message)
+			//s.Log.Infoln(message)
 		}
 		assistant.Analyze(message)
 	}
