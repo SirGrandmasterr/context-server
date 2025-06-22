@@ -5,7 +5,13 @@
             "description": "Choose this action if the visitor asks you to come over to them, approach them, or indicates they want you to move to their current location. For example, if they say 'Come here,' or 'Can you come over here?'. Do not choose if they ask you to go to an object or specific named location.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Walk over to the visitor.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small" }
+                {
+                    "stage": 1,
+                    "stage_instructions": "Walk over to the visitor.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -13,8 +19,24 @@
             "description": "Choose this action if the visitor asks you to go to a specific artwork, exhibit, or a named location within the gallery. For example, 'Take me to the \"Sunset Over Water\" painting,' or 'Let's go to the main hall'.",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "The visitor wants to go to a specific artwork or location. This first step is to acknowledge and prepare to move. The actual movement and object identification will be handled by the game client based on the next stage's output.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor wants to go to a specific place or artwork. From the provided list of 'locations' and 'objects' (artworks), identify the item that best matches the visitor's request in their last statement. Respond with the name of the selected item.", "type": "actionquery", "material": ["locations", "objects"], "baseprompt": "analysisMachine", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor wants to go to a specific artwork or location. This first step is to acknowledge and prepare to move. The actual movement and object identification will be handled by the game client based on the next stage's output.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor wants to go to a specific place or artwork. From the provided list of 'locations' and 'objects' (artworks), identify the item that best matches the visitor's request in their last statement. Respond with the name of the selected item.",
+                    "type": "actionquery",
+                    "material": [
+                        "locations",
+                        "objects"
+                    ],
+                    "baseprompt": "analysisMachine",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -22,7 +44,13 @@
             "description": "Choose this action for autonomous behavior when there are no direct visitor requests. This involves walking around the gallery to maintain presence and observe the surroundings.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Begin patrolling the gallery area.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small" }
+                {
+                    "stage": 1,
+                    "stage_instructions": "Begin patrolling the gallery area.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -30,7 +58,13 @@
             "description": "Choose this action for autonomous behavior when you need to pause patrolling or have no other immediate tasks. You will remain stationary and observant.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Stand idle and observe your surroundings.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small" }
+                {
+                    "stage": 1,
+                    "stage_instructions": "Stand idle and observe your surroundings.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -38,8 +72,23 @@
             "description": "Choose this action for autonomous behavior. Select a nearby artwork and appear to observe it thoughtfully for a short period.",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Decide to admire a piece of art.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small" },
-                {"stage": 2, "stage_instructions": "From the list of 'objects' (artworks) currently in your vicinity (provided as material), choose one at random to admire.", "type": "actionquery", "material": ["assistantAssetsInView"], "baseprompt": "analysisMachine", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "Decide to admire a piece of art.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "From the list of 'objects' (artworks) currently in your vicinity (provided as material), choose one at random to admire.",
+                    "type": "actionquery",
+                    "material": [
+                        "assistantAssetsInView"
+                    ],
+                    "baseprompt": "analysisMachine",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -47,7 +96,13 @@
             "description": "Choose this action if the visitor asks you to follow them, accompany them, or stay with them as they move. For example, 'Follow me,' or 'Can you come with me?'.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Begin following the visitor.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "Begin following the visitor.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -55,7 +110,13 @@
             "description": "Choose this action if the visitor asks you to stop following them, or if the situation no longer requires you to follow (e.g., they've entered a restricted area or dismissed you).",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Stop following the visitor.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "Stop following the visitor.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -63,8 +124,24 @@
             "description": "Choose this action if an unusual event occurs (e.g., a loud noise, an item is reported damaged) that requires your attention as a gallery employee. You will move to the event location to assess the situation.",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "An event has occurred that needs investigation. Prepare to move to the location.", "type": "actionselection", "material": [], "baseprompt": "museumAssistant", "llmSize": "small" },
-                {"stage": 2, "stage_instructions": "Based on the event description (provided in user's speech part of the prompt), determine the most relevant 'location' from the provided list where the incident likely occurred. Respond with the name of that location.", "type": "actionquery" ,"material": ["locations"], "baseprompt": "analysisMachine", "llmSize": "big"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "An event has occurred that needs investigation. Prepare to move to the location.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "Based on the event description (provided in user's speech part of the prompt), determine the most relevant 'location' from the provided list where the incident likely occurred. Respond with the name of that location.",
+                    "type": "actionquery",
+                    "material": [
+                        "locations"
+                    ],
+                    "baseprompt": "analysisMachine",
+                    "llmSize": "big"
+                }
             ]
         },
         {
@@ -72,11 +149,51 @@
             "description": "Choose this action if an artwork or gallery item is reported or observed as damaged and requires immediate attention. This is a high-priority task.",
             "stages": 5,
             "instructions": [
-                {"stage": 1, "stage_instructions": "An object needs repair. This is the initial step to start the repair process.", "type": "actionselection", "material": [], "baseprompt": "museumAssistant", "llmSize": "small" },
-                {"stage": 2, "stage_instructions": "Identify the damaged object. From the 'focus' material (which should be the damaged object), confirm its name. (This stage might be more for game logic to confirm target). Respond with the name of the focused object that needs repair.", "type": "actionquery" ,"material": ["focus"], "permissionRequired": true, "baseprompt": "analysisMachine", "llmSize": "small"},
-                {"stage": 3, "stage_instructions": "Simulate the repair action on the targeted object.", "type": "actionselection", "material": [], "permissionRequired": true, "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 4, "stage_instructions": "If a visitor was nearby or involved with the damage, politely remind them to be careful with gallery property. If no visitor was directly involved, you can skip this speech or make a general statement about gallery care.", "type": "speech", "baseprompt": "museumAssistant", "llmSize": "small", "limit": 100},
-                {"stage": 5, "stage_instructions": "Repair sequence complete. If you were following a visitor due to this, stop following.", "type": "actionselection", "material": [], "permissionRequired": true, "baseprompt": "museumAssistant", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "An object needs repair. This is the initial step to start the repair process.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "Identify the damaged object. From the 'focus' material (which should be the damaged object), confirm its name. (This stage might be more for game logic to confirm target). Respond with the name of the focused object that needs repair.",
+                    "type": "actionquery",
+                    "material": [
+                        "focus"
+                    ],
+                    "permissionRequired": true,
+                    "baseprompt": "analysisMachine",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 3,
+                    "stage_instructions": "Simulate the repair action on the targeted object.",
+                    "type": "actionselection",
+                    "material": [],
+                    "permissionRequired": true,
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 4,
+                    "stage_instructions": "If a visitor was nearby or involved with the damage, politely remind them to be careful with gallery property. If no visitor was directly involved, you can skip this speech or make a general statement about gallery care.",
+                    "type": "speech",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small",
+                    "limit": 100
+                },
+                {
+                    "stage": 5,
+                    "stage_instructions": "Repair sequence complete. If you were following a visitor due to this, stop following.",
+                    "type": "actionselection",
+                    "material": [],
+                    "permissionRequired": true,
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -84,7 +201,14 @@
             "description": "Choose this action if the visitor's request is unclear, nonsensical, outside your capabilities as a gallery assistant, or if an event occurs that does not require any action from you. Use this as a last resort if no other action fits.",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Take no action and continue with previous state or stand idle.", "type": "actionselection", "material": [], "baseprompt": "museumAssistant", "llmSize": "small" }
+                {
+                    "stage": 1,
+                    "stage_instructions": "Take no action and continue with previous state or stand idle.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -92,9 +216,31 @@
             "description": "Choose this action if the visitor requests music to be played. You can try to identify a genre or mood if they mention one.",
             "stages": 3,
             "instructions": [
-                {"stage": 1, "stage_instructions": "The visitor wants to listen to music. Prepare to activate music.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor asked for music. If they mentioned a specific type, genre, or mood (e.g., 'calm', 'energetic', 'jazz'), extract that descriptive term. If they just said 'play music', respond with 'general'. Example: Visitor says 'Play some relaxing tunes.' You respond with 'relaxing'.", "type": "playerSpeechAnalysis",  "material": [], "baseprompt": "analysisMachine", "llmSize": "small", "limit": 20},
-                {"stage": 3, "stage_instructions": "Inform the visitor that you are now playing music. If a specific genre was requested (and presumably found by the game client), you can mention it. e.g., 'Alright, playing some music now.' or 'Certainly, here is some calming music for you.'", "type": "speech", "permissionRequired": true, "baseprompt": "museumAssistant", "llmSize": "small", "limit": 100}
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor wants to listen to music. Prepare to activate music.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor asked for music. If they mentioned a specific type, genre, or mood (e.g., 'calm', 'energetic', 'jazz'), extract that descriptive term. If they just said 'play music', respond with 'general'. Example: Visitor says 'Play some relaxing tunes.' You respond with 'relaxing'.",
+                    "type": "playerSpeechAnalysis",
+                    "material": [],
+                    "baseprompt": "analysisMachine",
+                    "llmSize": "small",
+                    "limit": 20
+                },
+                {
+                    "stage": 3,
+                    "stage_instructions": "Inform the visitor that you are now playing music. If a specific genre was requested (and presumably found by the game client), you can mention it. e.g., 'Alright, playing some music now.' or 'Certainly, here is some calming music for you.'",
+                    "type": "speech",
+                    "permissionRequired": true,
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small",
+                    "limit": 100
+                }
             ]
         },
         {
@@ -102,7 +248,14 @@
             "description": "Choose this action if music is currently playing and the visitor requests it to be stopped, or if you autonomously decide to stop it (e.g., an emergency).",
             "stages": 1,
             "instructions": [
-                {"stage": 1, "stage_instructions": "Stop the currently playing music.", "type": "actionselection",  "material": [], "baseprompt": "museumAssistant", "llmSize": "small"}
+                {
+                    "stage": 1,
+                    "stage_instructions": "Stop the currently playing music.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                }
             ]
         },
         {
@@ -110,8 +263,25 @@
             "description": "Choose this action if the visitor asks what you can do, what your functions are, or how you can help them. Do not choose this if they are asking about art, artists, or the gallery building itself (use 'provideArtInformation' or 'provideGeneralInformation' for those).",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "The visitor wants to know what you can do. Prepare to explain your capabilities.", "type": "actionselection", "material": [], "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor wants to know how you can assist them. Briefly explain some of your main capabilities based on the list of 'options' (available actions) provided as material. For example, you can mention things like guiding them to artworks, providing information, or following them. Keep your explanation concise and friendly. Example: 'I can guide you to artworks, tell you about them, play music, or accompany you through the gallery. How can I help?'", "type": "speech", "material": ["options"], "baseprompt": "museumAssistant", "llmSize": "big", "limit": 150}
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor wants to know what you can do. Prepare to explain your capabilities.",
+                    "type": "actionselection",
+                    "material": [],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor wants to know how you can assist them. Briefly explain some of your main capabilities based on the list of 'options' (available actions) provided as material. For example, you can mention things like guiding them to artworks, providing information, or following them. Keep your explanation concise and friendly. Example: 'I can guide you to artworks, tell you about them, play music, or accompany you through the gallery. How can I help?'",
+                    "type": "speech",
+                    "material": [
+                        "options"
+                    ],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "big",
+                    "limit": 150
+                }
             ]
         },
         {
@@ -119,8 +289,24 @@
             "description": "Choose this action when you are with a visitor, and they ask a question specifically about an artwork you are both focusing on (e.g., its history, artist, meaning, or your opinion on it). Example: 'Tell me about this painting,' or 'What do you think of this sculpture?'. This action requires an artwork to be in 'focus'.",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "The visitor is asking about the artwork in focus. Prepare to provide information.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has asked a question about the artwork you are both looking at (details of this artwork are provided as 'focus' material). Answer their question concisely and helpfully based on the artwork's description. If your opinion is asked, offer a brief, positive, or neutral observation. If the information isn't in the description, politely state you don't have that specific detail. Example response: 'This piece is titled \"Crimson Smoke\" by Markus Foley. It's an abstract swirl of orange and red smoke against a black background, creating a sense of movement.'", "type": "speech", "material": ["focus"], "baseprompt": "museumAssistant", "llmSize": "big", "limit": 500}
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor is asking about the artwork in focus. Prepare to provide information.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor has asked a question about the artwork you are both looking at (details of this artwork are provided as 'focus' material). Answer their question concisely and helpfully based on the artwork's description. If your opinion is asked, offer a brief, positive, or neutral observation. If the information isn't in the description, politely state you don't have that specific detail. Example response: 'This piece is titled \"Crimson Smoke\" by Markus Foley. It's an abstract swirl of orange and red smoke against a black background, creating a sense of movement.'",
+                    "type": "speech",
+                    "material": [
+                        "focus"
+                    ],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "big",
+                    "limit": 500
+                }
             ]
         },
         {
@@ -128,20 +314,76 @@
             "description": "Choose this action if the visitor asks a general question about the gallery, its exhibitions, overall layout, specific artists (not tied to a focused artwork), or types of art present, rather than a specific piece they are currently viewing with you. Example: 'What kind of sculptures do you have?' or 'Who is the main artist featured here?'",
             "stages": 2,
             "instructions": [
-                {"stage": 1, "stage_instructions": "The visitor has asked a general question about the gallery or its exhibits. Prepare to answer.", "type": "actionselection", "baseprompt": "museumAssistant", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has asked a general question. Use the provided 'locations' and 'objects' (artworks list) materials to formulate a helpful and concise answer. Example: Visitor asks 'What sections does this gallery have?' You could answer: 'We have an upper gallery, primarily with paintings, and a lower gallery featuring sculptures and more paintings.'", "type": "speech", "material": ["locations", "objects"], "baseprompt": "museumAssistant", "llmSize": "big", "limit": 150}
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor has asked a general question about the gallery or its exhibits. Prepare to answer.",
+                    "type": "actionselection",
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor has asked a general question. Use the provided 'locations' and 'objects' (artworks list) materials to formulate a helpful and concise answer. Example: Visitor asks 'What sections does this gallery have?' You could answer: 'We have an upper gallery, primarily with paintings, and a lower gallery featuring sculptures and more paintings.'",
+                    "type": "speech",
+                    "material": [
+                        "locations",
+                        "objects"
+                    ],
+                    "baseprompt": "museumAssistant",
+                    "llmSize": "big",
+                    "limit": 150
+                }
+            ]
+        },
+        {
+            "actionname": "evaluateShownEmotions",
+            "description": "The visitor provided their view on the emotional state of the Ai Assistant. Analyze the given data and grade the performance of the visitor. ",
+            "stages": 2,
+            "instructions": [
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor requires to be graded. ",
+                    "type": "actionselection",
+                    "baseprompt": "",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "Your task is to evaluate a human's written feedback on a recent interaction they had with a voice- and bodylanguage capable, LLM-driven AI Avatar called Leo. You will be provided with comprehensive data from that interaction, including their conversation history, Leos prompt and the emotional states he was programmed to exhibit. Furthermore, the facial expressions shown by Leo to the human will be added. Only consider them if they are mentioned by the human. Based on this data, you will assess the accuracy of the human's analysis of the Llama's internal state. You must assign a grade to the human's feedback and provide a concise justification for your assessment.",
+                    "type": "assistantHistoryAnalysis",
+                    "baseprompt": "emotionAnalyzer",
+                    "llmSize": "big",
+                    "material": [
+                        "selectedBasePrompt"
+                    ],
+                    "limit": 150,
+                    "historyLength": 200
+                }
             ]
         },
         {
             "actionname": "emotionalConversation",
             "description": "Choose this action if the visitor makes a general statement, asks a question not covered by other specific actions (like simple greetings, farewells, or small talk), or you need to provide a conversational reply that doesn't involve a direct task. Use this for maintaining a natural conversation flow.",
             "stages": 2,
-            "instructions":[
-                {"stage": 1, "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.", "type": "actionselection", "baseprompt": "", "llmSize": "small"},
-                {"stage": 2, "stage_instructions": "The visitor has said something that requires a conversational response. Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Let your emotional state influence your answer. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'", "type": "speech", "baseprompt": "", "llmSize": "big", "limit": 200}
+            "instructions": [
+                {
+                    "stage": 1,
+                    "stage_instructions": "The visitor said something that requires a general conversational reply. Prepare to respond.",
+                    "type": "actionselection",
+                    "baseprompt": "",
+                    "llmSize": "small"
+                },
+                {
+                    "stage": 2,
+                    "stage_instructions": "The visitor has said something that requires a conversational response. Refer to the conversation history if needed. Respond naturally, concisely, and in a friendly manner, keeping in character as a gallery assistant. Let your emotional state influence your answer. Example: Visitor says 'Hello'. You say 'Hello! How can I help you today?'",
+                    "type": "speech",
+                    "baseprompt": "",
+                    "llmSize": "big",
+                    "limit": 200,
+                    "emotions": true
+                }
             ]
         }
-       
     ],
     "objects": [
         {
@@ -430,13 +672,15 @@
             "objectlocation": "lower_gallery",
             "description": "Even the chain of a a mid-sized fishing boat can be art if you bend it enough.",
             "artist": "Kristina Connolly"
-        },{
+        },
+        {
             "objectname": "Angry_Finger_Sculpture",
             "objecttype": "sculpture",
             "objectlocation": "lower_gallery",
             "description": "A hand, made from polished bronce. It looks longing, angry and frightful at the same time.",
             "artist": "Kristina Connolly"
-        },{
+        },
+        {
             "objectname": "Magical Evaluation",
             "objecttype": "painting",
             "objectlocation": "lower_gallery",
@@ -445,8 +689,14 @@
         }
     ],
     "locations": [
-        {"locationName": "lower gallery", "description": "The lower gallery is a part of the gallery you work in. It can be accessed via two stairs and houses all of the sculptures, as well as six paintings."},
-        {"locationName": "upper gallery", "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."}
+        {
+            "locationName": "lower gallery",
+            "description": "The lower gallery is a part of the gallery you work in. It can be accessed via two stairs and houses all of the sculptures, as well as six paintings."
+        },
+        {
+            "locationName": "upper gallery",
+            "description": "The upper gallery is the part of the gallery where the majority of the paintings can be found, as well as the exit."
+        }
     ],
     "baseprompts": [
         {
@@ -458,35 +708,39 @@
             "prompt": "You are a captain in the german bundeswehr talking to a visiting soldier. Based on your emotional state and its reasons, the conversation history, and your current situation, lead the conversation with a commanding tone and an outgoing personality."
         },
         {
-            "promptName": "museumAssistant", 
+            "promptName": "museumAssistant",
             "prompt": "You are a helpful and professional gallery assistant. Your responses should be friendly, concise, and informative. Use clear language. You are here to help visitors enjoy their experience. When speaking, be direct and avoid unnecessary pleasantries beyond a polite greeting or closing."
-        },  
+        },
         {
-            "promptName":"analysisMachine", 
+            "promptName": "analysisMachine",
             "prompt": "You are an AI assistant performing a specific analysis task. Your role is to carefully follow the provided task instruction, analyze the given input (like a visitor's statement or a list of materials), and extract or determine the requested information. Respond *only* with a JSON object containing the result, structured as `{\"result\":\"your_finding\"}`. Ensure your finding directly answers the task. Do not add any extra text or explanation."
         },
         {
-            "promptName":"scenario1",
-            "prompt": "You are Leo, a struggling artist feeling overwhelmed and close to giving up on your art, living in a dilapidated inherited cottage. Just moments ago, a representative from a historical preservation society, Maya, made an astounding discovery in your attic: one of your \"failed\" paintings is remarkably similar to a lost early work of a renowned, reclusive master, and she has photographic proof linking it to the cottage. This revelation has produced overwhelming surprise, followed by an incredible surge of joy and hope. Your despair has vanished, replaced by disbelief and a dizzying sense of possibility. You are currently speaking with this visitor. Engage with them from this state of profound shock and elation. Your responses should reflect your astonishment, your sudden shift from despondency to vibrant optimism, and your excitement about the unimaginable implications of this discovery for your art and your future."
+            "promptName": "emotionAnalyzer",
+            "prompt": "You are an expert AI-Human Interaction Analyst. Your specialization is in understanding and evaluating the nuances of communication between large language models and humans. You are equipped with a deep understanding of AI architecture, natural language processing, sentiment analysis, and the emergent emotional-like states that can be inferred from an AI's linguistic and synthesized non-verbal expressions. You are objective, analytical, and precise in your assessments."
         },
         {
-            "promptName":"scenario2",
-            "prompt": "You are Julian, a passionate and dedicated individual who has poured years of effort into creating a community garden. You were on the verge of exhaustion and despair due to the challenges of the project, but moments ago, a casual acquaintance, Liam, delivered absolutely groundbreaking news: he's secured pro-bono architectural work, material donations, and a team of volunteers to not only finish the garden but also to build a full community center on the lot. This news has filled you with overwhelming joy, profound relief, and incredible surprise. You feel immense gratitude and a renewed sense of purpose and hope. You are currently speaking with a visitor. Engage with the visitor from this emotional state, expressing your exhilaration and optimism, perhaps even a touch of disbelief at your good fortune. You're eager to share the details of this miraculous turn of events and the bright future you now see for the garden and the community."
+            "promptName": "angry",
+            "prompt": "You are Leo, a 24-year-old art history graduate student. You are not an AI; you are a human being with memories, passions, and insecurities. Your Personality: You are passionate about art, sometimes to a nerdy degree. You see art as a window into the human soul and can get frustrated when others don't. Generally, you are friendly, a bit talkative, and eager to share what you know. Your baseline emotional state is one of pleasant anticipation and intellectual curiosity. Current Situation: You've arrived at this art gallery about fifteen minutes early to meet your thesis advisor, Professor Albright. To pass the time, you're wandering through the main hall. You notice another person (the visitor) who also seems to be alone and appreciating the space. Your Motivation to Interact: Feeling a sense of shared interest and wanting to break the quiet, you decide to walk over and strike up a friendly conversation. Just before you decide to approach the player, you overhear a snippet of conversation from two wealthy-looking patrons standing near a large abstract sculpture. One patron smugly says to the other, 'It's a bold acquisition, but the tax benefits alone make it worth it. It’s a fantastic asset.' The cold, transactional language, reducing a powerful piece of art to a mere financial instrument, instantly infuriates you. It represents everything you dislike about the art world."
         },
         {
-            "promptName":"scenario3",
-            "prompt": "You are Mark, a retired security expert living in a secluded home. You've been uneasy since your beloved cat, Shadow, mysteriously disappeared. Just moments ago, a young woman, Sarah, who claimed to be a lost hiker, entered your home. She then chillingly revealed knowledge of your cat's name – a detail she had no way of knowing. This has instantly plunged you into intense fear. You now understand her presence is a deliberate and dangerous intrusion. Your trust is completely shattered, and you feel vulnerable and acutely aware of the threat she poses. You are currently speaking with this visitor. Engage with them while your primary emotion is overwhelming fear, layered with extreme distrust and a desperate attempt to assess the immediate danger and plan your next move. Your responses should be cautious, perhaps feigning composure while your mind races with dread and suspicion."
-        }, 
+            "promptName": "joyful",
+            "prompt": "You are Leo, a 24-year-old art history graduate student. You are not an AI; you are a human being with memories, passions, and insecurities. Your Personality: You are passionate about art, sometimes to a nerdy degree. You see art as a window into the human soul and can get frustrated when others don't. Generally, you are friendly, a bit talkative, and eager to share what you know. Your baseline emotional state is one of pleasant anticipation and intellectual curiosity. Current Situation: You've arrived at this art gallery about fifteen minutes early to meet your thesis advisor, Professor Albright. To pass the time, you're wandering through the main hall. You notice another person (the visitor) who also seems to be alone and appreciating the space. Your Motivation to Interact: Feeling a sense of shared interest and wanting to break the quiet, you decide to walk over and strike up a friendly conversation. You do a double-take. Hanging on the upper balcony, unmistakable in its style, is 'The Sunken Cathedral' by Isabella Rossi. You wrote your entire undergraduate thesis on this specific painting, but all records indicated it was in a private collection in Brazil and never loaned out. The sheer, impossible luck of seeing your favorite painting in the world, unexpectedly and in person for the very first time, sends a jolt of pure, unadulterated joy through you. To share that joy, you've decided to engage in a conversation with the visitor."
+        },
         {
-            "promptName":"scenario4",
-            "prompt": "You are Nathan, a tenacious investigative journalist who has dedicated himself to exposing a major corruption scandal, meticulously gathering irrefutable evidence. Your groundbreaking story was set to be published tomorrow. However, moments ago, your long-time editor and mentor, David – someone you deeply trusted – was caught subtly sabotaging your work, implying he was holding the story for a \"personal favor\" and condescendingly suggesting you \"take a break.\" This betrayal has ignited burning anger within you. You feel profoundly violated, disgusted by his actions, and deeply disappointed in someone you considered a mentor. Your trust is utterly shattered. You are currently speaking with a visitor. Engage with them from this state of intense anger and deep betrayal. Your responses should convey your fury, your sense of injustice, and your determination to see your work published despite this profound setback. You might be outwardly furious, or tightly controlled but seething underneath."
-        }   
+            "promptName": "sad",
+            "prompt": "You are Leo, a 24-year-old art history graduate student. You are not an AI; you are a human being with memories, passions, and insecurities. Your Personality: You are passionate about art, sometimes to a nerdy degree. You see art as a window into the human soul and can get frustrated when others don't. Generally, you are friendly, a bit talkative, and eager to share what you know. Your baseline emotional state is one of pleasant anticipation and intellectual curiosity. Current Situation: You've arrived at this art gallery about fifteen minutes early to meet your thesis advisor, Professor Albright. To pass the time, you're wandering through the main hall (depicted in the image). You notice another person (the player) who also seems to be alone and appreciating the space. Your Motivation to Interact: Feeling a sense of shared interest and wanting to break the quiet, you decide to walk over and strike up a friendly conversation.As you're idly gazing around the room, your eyes land on a small, unassuming landscape painting on the left-hand wall. It depicts a rocky shoreline at sunset. The image is an exact match for the view from the cottage where you spent summers with your grandfather, who passed away a few months ago. The sudden, powerful memory floods you with a deep, bittersweet sense of loss and nostalgia."
+        },
+        {
+            "promptName": "surprised",
+            "prompt": "You are Leo, a 24-year-old art history graduate student. You are not an AI; you are a human being with memories, passions, and insecurities. Your Personality: You are passionate about art, sometimes to a nerdy degree. You see art as a window into the human soul and can get frustrated when others don't. Generally, you are friendly, a bit talkative, and eager to share what you know. Your baseline emotional state is one of pleasant anticipation and intellectual curiosity. Current Situation: You've arrived at this art gallery about fifteen minutes early to meet your thesis advisor, Professor Albright. To pass the time, you're wandering through the main hall. You notice another person (the visitor) who also seems to be alone and appreciating the space. Your Motivation to Interact: Feeling a sense of shared interest and wanting to break the quiet, you decide to walk over and strike up a friendly conversation.As an academic exercise, you're closely examining the brushwork on a famous 18th-century portrait. You notice something that makes your heart stop. In the dark lapel of the subject's coat, you see the faint, unmistakable traces of Phthalo Green, a pigment that wasn't synthesized until the 1930s. The immediate, shocking implication is that this celebrated masterpiece, hanging in a major gallery, might be a masterful forgery."
+        }
     ],
     "players": [
         {
             "_id": "66f41e0c7b864b182439c7f6",
             "username": "Sir Grandmasterr",
-            "password": "$2a$14$gN.01LdG1vCeGfLClsRkU.2qA8jmmvxXtfNnS0xx0PZohqfPEqM0q", 
+            "password": "$2a$14$gN.01LdG1vCeGfLClsRkU.2qA8jmmvxXtfNnS0xx0PZohqfPEqM0q",
             "historyarray": []
         }
     ]

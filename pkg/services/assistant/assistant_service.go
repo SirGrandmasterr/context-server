@@ -369,6 +369,72 @@ func (srv *Service) PlayerSpeechAnalysis(msg entities.WebSocketMessage, inst ent
 	}, nil
 }
 
+func (srv *Service) AssistantHistoryAnalysis(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
+	url := srv.Conf.LlmSmall
+	if inst.LlmSize == "big" {
+		url = srv.Conf.LlmBig
+	}
+
+	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, inst.BasePrompt)
+	if err != nil {
+		srv.Log.Errorw("Prompt assembly failed for PlayerSpeechAnalysis", "error", err)
+		return entities.WebSocketAnswer{}, err
+	}
+
+	// Temperature for analysis/extraction should be low.
+	payloadStruct := srv.AssemblePayload(inst.Limit, false, 0.4, prompt, srv.Pr.AssembleGradingGrammar(), srv.Pr.AssembleEmpty(), 5) // inst.Limit for nPredict
+	if inst.Limit == 0 {
+		payloadStruct.NPredict = 100 // Default for analysis
+	}
+
+	payload, err := json.Marshal(payloadStruct)
+	if err != nil {
+		srv.Log.Errorw("Failed to marshal payload for PlayerSpeechAnalysis", "error", err)
+		return entities.WebSocketAnswer{}, err
+	}
+	srv.Log.Debugw("PlayerSpeechAnalysis LLM Request", "url", url, "payload", string(payload))
+
+	res, err := srv.callLLM(url, payload, false)
+	if err != nil {
+		return entities.WebSocketAnswer{}, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		srv.Log.Errorw("Failed to read LLM response body for PlayerSpeechAnalysis", "error", err)
+		return entities.WebSocketAnswer{}, err
+	}
+	srv.Log.Debugw("PlayerSpeechAnalysis LLM Raw Response", "body", string(body))
+
+	var serverResponse entities.AssistantResponse
+	if err := json.Unmarshal(body, &serverResponse); err != nil {
+		srv.Log.Errorw("Failed to unmarshal LLM server response for PlayerSpeechAnalysis", "body", string(body), "error", err)
+		return entities.WebSocketAnswer{}, err
+	}
+
+	var result entities.AssistantAnalysisResult
+	if err := json.Unmarshal([]byte(serverResponse.Content), &result); err != nil {
+		srv.Log.Errorw("Failed to unmarshal analysis result from LLM content", "content", serverResponse.Content, "error", err)
+		// If LLM fails to produce valid JSON, we might return the raw content or an error
+		// For now, returning an error if JSON is expected but not received.
+		return entities.WebSocketAnswer{}, fmt.Errorf("LLM returned non-JSON content for analysis: %s", serverResponse.Content)
+	}
+
+	srv.Log.Infow("Assistant Analysis Result", "result", result.Grade, result.Justification)
+
+	mapD := map[string]string{"grade": result.Grade, "justification": result.Justification}
+	mapB, _ := json.Marshal(mapD)
+
+	return entities.WebSocketAnswer{
+		Type:       inst.Type,
+		Text:       string(mapB),
+		ActionName: actionName,
+		Stage:      inst.Stage,
+	}, nil
+
+}
+
 func (srv *Service) EmotionUpdate(msg entities.WebSocketMessage, inst entities.Instructions, actionName string) (entities.WebSocketAnswer, error) {
 	url := srv.Conf.LlmSmall
 	if inst.LlmSize == "big" {
@@ -527,51 +593,4 @@ func (srv *Service) AssemblePayload(nPredict int, stream bool, temperature float
 		Prompt:           prompt,
 		JsonSchema:       schema,
 	}
-}
-
-// StreamAssistantTest is a non-streaming version for testing speech generation.
-// Kept for compatibility with evaluation service, but ideally, eval would use streaming or a dedicated non-streaming endpoint.
-func (srv *Service) StreamAssistantTest(msg entities.WebSocketMessage, inst entities.Instructions, temp float32, miro int) string {
-	url := srv.Conf.LlmSmall
-	if inst.LlmSize == "big" {
-		url = srv.Conf.LlmBig
-	}
-
-	prompt, err := srv.Pr.AssembleInstructionsPrompt(msg, inst, inst.BasePrompt)
-	if err != nil {
-		srv.Log.Errorw("Prompt assembly failed for StreamAssistantTest", "error", err)
-		return "[Error assembling prompt]"
-	}
-
-	nPredict := inst.Limit
-	if nPredict == 0 {
-		nPredict = 256 // Default for speech
-	}
-
-	payloadStruct := srv.AssemblePayload(nPredict, false, temp, prompt, srv.Pr.AssembleEmpty(), srv.Pr.AssembleEmpty(), miro) // stream is false
-	payload, err := json.Marshal(payloadStruct)
-	if err != nil {
-		srv.Log.Errorw("Failed to marshal payload for StreamAssistantTest", "error", err)
-		return "[Error marshalling payload]"
-	}
-
-	res, err := srv.callLLM(url, payload, false)
-	if err != nil {
-		return "[Error calling LLM]"
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		srv.Log.Errorw("Failed to read LLM response body for StreamAssistantTest", "error", err)
-		return "[Error reading LLM response]"
-	}
-
-	var serverResponse entities.AssistantResponse
-	if err := json.Unmarshal(body, &serverResponse); err != nil {
-		srv.Log.Errorw("Failed to unmarshal LLM server response for StreamAssistantTest", "body", string(body), "error", err)
-		return "[Error unmarshalling LLM response: " + string(body) + "]"
-	}
-
-	return serverResponse.Content
 }

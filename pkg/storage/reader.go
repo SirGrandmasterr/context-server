@@ -208,6 +208,23 @@ func (strg *StorageReader) ReadMaterials(mats []string, ac entities.AssistantCon
 			)
 		}
 	}
+	//Relevant if, for instance, an action should evaluate actions by an assistant. To do so, it requires the baseprompt of that assistant in addition to the analyzing baseprompt of its own.
+	if m["selectedBasePrompt"] {
+		for _, asset := range ac.AssetsInView {
+			obj, err := strg.ReadBasePrompt(asset, context.Background())
+			if err != nil {
+				strg.Log.Errorln("Error reading single Object for assistantAssetsInView")
+			}
+			s = append(
+				s,
+				entities.Material{
+					Type:        "selectedBasePrompt",
+					Name:        obj.PromptName,
+					Description: " PROVIDED BASEPROMPT MATERIAL: " + obj.Prompt,
+				},
+			)
+		}
+	}
 	if m["playerAssetsInView"] {
 		for _, asset := range pc.AssetsInView {
 			obj, err := strg.ReadSingleObject(asset, context.Background())

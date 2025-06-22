@@ -29,8 +29,10 @@ type Instructions struct {
 	ResultVar          string   `json:"resultVar" bson:"resultVar"`
 	Limit              int      `json:"limit" bson:"limit"` //Word limit in speech analysis type
 	PermissionRequired bool     `json:"permissionRequired" bson:"permissionRequired"`
-	BasePrompt         string   `json:"baseprompt"  bson:"basePrompt"` //What should the Assistant imagine itself to be for this stage?
-	LlmSize            string   `json:"llmSize" bson:"llmSize"`        //big or small
+	BasePrompt         string   `json:"baseprompt"  bson:"basePrompt"`      //What should the Assistant imagine itself to be for this stage?
+	LlmSize            string   `json:"llmSize" bson:"llmSize"`             //big or small
+	Emotions           bool     `json:"emotions" bson:"emotions"`           // Should emotions be enabled/Added to prompt?
+	HistoryLength      int      `json:"historyLength" bson:"historyLength"` // How many history Entries?
 }
 type RelevantObject struct {
 	ObjectName     string   `json:"objectname" bson:"object_name"`
@@ -46,6 +48,11 @@ type LlmActionResponse struct {
 
 type LlmAnalysisResult struct {
 	Result string `json:"result"`
+}
+
+type AssistantAnalysisResult struct {
+	Grade         string `json:"grade"`
+	Justification string `json:"justification"`
 }
 
 type Material struct {
