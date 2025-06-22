@@ -416,8 +416,25 @@ func (srv *Service) AssistantHistoryAnalysis(msg entities.WebSocketMessage, inst
 	var result entities.AssistantAnalysisResult
 	if err := json.Unmarshal([]byte(serverResponse.Content), &result); err != nil {
 		srv.Log.Errorw("Failed to unmarshal analysis result from LLM content", "content", serverResponse.Content, "error", err)
-		// If LLM fails to produce valid JSON, we might return the raw content or an error
-		// For now, returning an error if JSON is expected but not received.
+		// Fehlerbehandlung nach failed Unmarshal
+		jsonStr := serverResponse.Content
+
+		// Entferne evtl. abschließende Whitespaces
+		trimmed := strings.TrimSpace(jsonStr)
+
+		// Falls das JSON mit '",' endet, fehlt vermutlich eine schließende Klammer
+		if strings.HasSuffix(trimmed, "\",") {
+			trimmed += "}"
+		} else if strings.Count(trimmed, "\"")%2 != 0 {
+			// Ungerade Anzahl von Anführungszeichen => ein String nicht geschlossen
+			trimmed += "\"}"
+		}
+
+		// Erneuter Versuch
+		if err2 := json.Unmarshal([]byte(trimmed), &result); err2 != nil {
+			srv.Log.Errorw("Failed to unmarshal analysis result after repair attempt", "content", trimmed, "error", err2)
+			return entities.WebSocketAnswer{}, fmt.Errorf("LLM returned non-JSON content for analysis: %s", trimmed)
+		}
 		return entities.WebSocketAnswer{}, fmt.Errorf("LLM returned non-JSON content for analysis: %s", serverResponse.Content)
 	}
 

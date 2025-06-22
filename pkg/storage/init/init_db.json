@@ -356,7 +356,7 @@
                     "material": [
                         "selectedBasePrompt"
                     ],
-                    "limit": 150,
+                    "limit": 200,
                     "historyLength": 200
                 }
             ]
