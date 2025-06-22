@@ -349,7 +349,7 @@
                 },
                 {
                     "stage": 2,
-                    "stage_instructions": "Your task is to evaluate a human's written feedback on a recent interaction they had with an AI Assistant. You will be provided with comprehensive data from that interaction. Based on this data, you will assess the accuracy of the human's analysis of the Llama's internal state. You must assign a grade to the human's feedback and provide a concise justification for your assessment.",
+                    "stage_instructions": "Your task is to evaluate a human's written feedback on a recent interaction they had with a voice- and bodylanguage capable, LLM-driven AI Avatar called Leo. You will be provided with comprehensive data from that interaction, including their conversation history, Leos prompt and the emotional states he was programmed to exhibit. Furthermore, the facial expressions shown by Leo to the human will be added. Only consider them if they are mentioned by the human. Based on this data, you will assess the accuracy of the human's analysis of the Llama's internal state. You must assign a grade to the human's feedback and provide a concise justification for your assessment.",
                     "type": "assistantHistoryAnalysis",
                     "baseprompt": "emotionAnalyzer",
                     "llmSize": "big",

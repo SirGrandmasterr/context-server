@@ -201,7 +201,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 			prompt += "RELEVANT INFORMATION (Materials):\n"
 			for _, mat := range material {
 				prompt += `- ` + mat.Name + `: ` + mat.Description + `\n`
-				if mat.Name == "selectedBasePrompt" {
+				if mat.Type == "selectedBasePrompt" {
 					//We want someone elses baseprompt, so probably that guy's emotions too
 					otherAiemotion = true
 				}
@@ -222,20 +222,24 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 	prompt += "\n"
 
 	if otherAiemotion {
-		if inst.Emotions {
-			// Emotional state
-			prompt += "PROVIDED EMOTIONAL STATE \n"
-			prompt += "This emotional state belongs to the provided baseprompt and indicates the state of mind of whom that baseprompt was applied to."
-			prompt += "EMOTIONAL VALUES: \n"
-			for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
-				prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
-			}
-			prompt += "EMOTIONAL TRIGGERS: \n"
-			for _, em := range msg.AssistantContext.EmotionalState.Triggers {
-				prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
-			}
+
+		// Emotional state
+		prompt += "PROVIDED EMOTIONAL STATE \n"
+		prompt += "This emotional state belongs to the provided baseprompt and indicates the state of mind of whom that baseprompt was applied to."
+		prompt += "EMOTIONAL VALUES: \n"
+		for em, _ := range msg.AssistantContext.EmotionalState.Emotions {
+			prompt += `- ` + em + `: ` + strconv.Itoa(msg.AssistantContext.EmotionalState.Emotions[em]) + `\n`
+		}
+		prompt += "EMOTIONAL TRIGGERS: \n"
+		for _, em := range msg.AssistantContext.EmotionalState.Triggers {
+			prompt += `- ` + `This caused ` + strconv.Itoa(em.Intensity) + "/100" + em.TargetEmotion + `: ` + em.Description + `\n`
 		}
 
+		prompt += "MIMIC EXPRESSION PERCENTAGES \n"
+		prompt += "This list shows the percentages of mimic expressions shown over the course of the conversation."
+		for em, val := range msg.AssistantContext.FacialHistory {
+			prompt += `- ` + em + " was shown " + strconv.FormatFloat(float64(val), 'f', -1, 32) + " percent of the time.\n"
+		}
 	}
 
 	if inst.Emotions {
@@ -273,7 +277,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "DO NOT USE ANY OTHER MEANS OF DESCRIBING ACTIONS TAKEN. Example on what not to do: \"*Holds out hand*\", \"(wiggles suspiciously)\", etc."
 		prompt += "<|eot_id|>\n"
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
-		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
+		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say? Answer the Interlocutor directly. \n"
 		prompt += "<|eot_id|>\n"
 	case "actionquery":
 		// This type expects the LLM to choose from the provided materials.

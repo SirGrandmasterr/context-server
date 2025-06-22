@@ -132,15 +132,16 @@ type EmotionalState struct {
 */
 // AssistantContext represents the overall context sent from Unity.
 type AssistantContext struct {
-	Location           string         `json:"location"`
-	PlayerVisible      bool           `json:"playerVisible"`
-	PlayerAudible      bool           `json:"playerAudible"`
-	AssetsInView       []string       `json:"assetsInView"`
-	AvailableActions   []string       `json:"availableActions"`
-	WalkingState       string         `json:"walkingState"` //
-	FocusedAsset       string         `json:"focusedAsset"` // If following Player and looking together at artwork
-	SelectedBasePrompt string         `json:"selectedBasePrompt"`
-	EmotionalState     EmotionalState `json:"emotionalState"` // New field for the emotional state
+	Location           string             `json:"location"`
+	PlayerVisible      bool               `json:"playerVisible"`
+	PlayerAudible      bool               `json:"playerAudible"`
+	AssetsInView       []string           `json:"assetsInView"`
+	AvailableActions   []string           `json:"availableActions"`
+	WalkingState       string             `json:"walkingState"` //
+	FocusedAsset       string             `json:"focusedAsset"` // If following Player and looking together at artwork
+	SelectedBasePrompt string             `json:"selectedBasePrompt"`
+	EmotionalState     EmotionalState     `json:"emotionalState"` // New field for the emotional state
+	FacialHistory      map[string]float32 `json:"facialHistory"`
 }
 
 type PlayerContext struct {

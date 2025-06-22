@@ -423,7 +423,7 @@ func (srv *Service) AssistantHistoryAnalysis(msg entities.WebSocketMessage, inst
 
 	srv.Log.Infow("Assistant Analysis Result", "result", result.Grade, result.Justification)
 
-	mapD := map[string]string{"grade": result.Grade, "result": result.Justification}
+	mapD := map[string]string{"grade": result.Grade, "justification": result.Justification}
 	mapB, _ := json.Marshal(mapD)
 
 	return entities.WebSocketAnswer{
