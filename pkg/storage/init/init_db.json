@@ -405,7 +405,8 @@
                     "baseprompt": "",
                     "llmSize": "big",
                     "limit": 200,
-                    "emotions": true
+                    "emotions": true,
+                    "historyLength": 100
                 }
             ]
         }
