@@ -331,6 +331,15 @@ func (ap *AssistantProcess) InstructionsLoop(action_db entities.Action, tok enti
 				}
 				return
 			}
+			result, err := ap.aserv.AssistantHistoryAnalysis(msg, inst, action_db.ActionName)
+			if err != nil {
+				ap.Log.Errorln(err)
+			}
+			ap.Log.Infoln(result)
+			result.Token = tok.ID
+			result.Stage = inst.Stage
+			ap.responseChannel <- &result
+			_, _ = ap.CheckDeleteToken(action_db.Stages, tok)
 		}
 
 		//This is only ever true in actionUpdate, and is supposed to be used for one instruction only.

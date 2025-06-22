@@ -270,7 +270,7 @@ func (srv *PromptService) AssembleInstructionsPrompt(msg entities.WebSocketMessa
 		prompt += "Formulate a concise response to the visitor based on this task. Speak directly to them. Let your emotional state strongly influence your answer and its wording.\n"
 		prompt += "Keep answers short and interactive unless a technical answer requires a small monologue. Let your emotional triggers influence the flow of the conversation. DO NOT LITERALLY STATE YOUR FEELINGS UNLESS ASKED DIRECTLY."
 		prompt += "Use the following tags at appropriate places to augment the emotional impact of your answer: <laugh>, <chuckle>, <sigh>, <cough>, <sniffle>, <groan>, <yawn>, <gasp>. THESE TAGS ARE LITERAL AND NOT TO BE IMPROVISED UPON.\n"
-		prompt += "Do not use any kind of actiontags and instead describe noises using either the specific tags above, or by utilizing onomatopoeia. Example: Instead of *yells*, write out the yell like \"AAAAAAH!\". Instead of \"(shakes head)\" use a fitting tag like <chuckle> or leave it out entirely. Instead of *thinks strongly*, write \"Hmmmm.\"."
+		prompt += "DO NOT USE ANY OTHER MEANS OF DESCRIBING ACTIONS TAKEN. Example on what not to do: \"*Holds out hand*\", \"(wiggles suspiciously)\", etc."
 		prompt += "<|eot_id|>\n"
 		prompt += "<|start_header_id|>user<|end_header_id|>\n"
 		prompt += "Interlocutor's last relevant statement (if any, otherwise consider the general context): \"" + msg.Speech + "\"\nWhat do you say?\n"
@@ -442,7 +442,40 @@ func (srv *PromptService) AssembleEmotionalGrammar() string {
 }
 
 func (srv *PromptService) AssembleGradingGrammar() string {
-	grammar := `root ::= \"{\" ws01 root-grade \",\" ws01 root-justification \"}\" ws01\nroot-grade ::= \"\\\"grade\\\"\" \":\" ws01 (\"\\\"Excellent\\\"\" | \"\\\"Good\\\"\" | \"\\\"Average\\\"\" | \"\\\"Poor\\\"\" | \"\\\"Failing\\\"\")\nroot-justification ::= \"\\\"justification\\\"\" \":\" ws01 string\n\n\nvalue  ::= (object | array | string | number | boolean | null) ws\n\nobject ::=\n  \"{\" ws (\n    string \":\" ws value\n    (\",\" ws string \":\" ws value)*\n  )? \"}\"\n\narray  ::=\n  \"[\" ws01 (\n            value\n    (\",\" ws01 value)*\n  )? \"]\"\n\nstring ::=\n  \"\\\"\" (string-char)* \"\\\"\"\n\nstring-char ::= [^\"\\\\] | \"\\\\\" ([\"\\\\/bfnrt] | \"u\" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) # escapes\n\nnumber ::= integer (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\ninteger ::= \"-\"? ([0-9] | [1-9] [0-9]*)\nboolean ::= \"true\" | \"false\"\nnull ::= \"null\"\n\n# Optional space: by convention, applied in this grammar after literal chars when allowed\nws ::= ([ \\t\\n] ws)?\nws01 ::= ([ \\t\\n])?`
+	grammar := `
+root ::= "{" ws01 root-grade "," ws01 root-justification "}" ws01
+root-grade ::= "\"grade\"" ":" ws01 ("\"Excellent\"" | "\"Good\"" | "\"Average\"" | "\"Poor\"" | "\"Failing\"")
+root-justification ::= "\"justification\"" ":" ws01 string
+
+
+value  ::= (object | array | string | number | boolean | null) ws
+
+object ::=
+  "{" ws (
+    string ":" ws value
+    ("," ws string ":" ws value)*
+  )? "}"
+
+array  ::=
+  "[" ws01 (
+            value
+    ("," ws01 value)*
+  )? "]"
+
+string ::=
+  "\"" (string-char)* "\""
+
+string-char ::= [^"\\] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]) # escapes
+
+number ::= integer ("." [0-9]+)? ([eE] [-+]? [0-9]+)?
+integer ::= "-"? ([0-9] | [1-9] [0-9]*)
+boolean ::= "true" | "false"
+null ::= "null"
+
+# Optional space: by convention, applied in this grammar after literal chars when allowed
+ws ::= ([ \t\n] ws)?
+ws01 ::= ([ \t\n])?
+	`
 	return grammar
 }
 
